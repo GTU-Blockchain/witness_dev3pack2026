@@ -3,6 +3,9 @@ name = "witness"
 version = "0.1.0"
 description = "Witness: ses kaydı hash'ini zincire bir kez yazan program"
 edition = "2021"
+# Solana platform-tools v1.48 derleyicisi (rustc 1.84). Cargo'nun MSRV-farkında
+# çözücüsü, edition2024 (rustc 1.85+) isteyen bağımlılıkları otomatik eler.
+rust-version = "1.84"
 
 [lib]
 crate-type = ["cdylib", "lib"]
