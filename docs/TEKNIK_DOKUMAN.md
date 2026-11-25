@@ -308,6 +308,7 @@ gantt
 | Hash | Dosyanın son halinin ham baytlarının SHA-256'sı. Metinde küçük harf hex, zincirde 32 bayt. Dosya sonradan yeniden kodlanmaz |
 | Ses formatı | m4a (AAC), mono, 44.1 kHz |
 | Program | Devnet, `PROGRAM_ID` + `program/target/idl/witness.json`. PDA seed'leri `["rec", hash32]` |
+| Paket sürümleri | `@coral-xyz/anchor` **0.31.x** (app + web, programın ürettiği IDL'ı okuyabilmek için aynı major/minor; Anchor 0.30+ IDL formatı eskisiyle uyumsuz). `@solana/web3.js` **1.x** (v2 kullanılmaz, API farklı). Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, Expo Go değil |
 | Zaman | Zincirde Unix saniye (`i64`), UI'da İstanbul saati |
 | Supabase tablosu | `recordings` (yukarıdaki kolonlar) |
 | Paylaşım linki | `/v/<hash>` + isteğe bağlı `#k=<anahtar>`, Memo yedeğinde `?tx=<imza>` |
