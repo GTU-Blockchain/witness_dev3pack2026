@@ -6,7 +6,25 @@ _`docs/GOREV_PANOSU.md` değişmedi; tek doğruluk kaynağı ve görev/öncelik 
 
 Ekip 5 kişi ama `docs/GOREV_PANOSU.md` görevleri 5 role 1:1 eşliyor (her role bir kişi). Gerçek dağılım farklı: **2 kişi Rol 1 (Mobil UI)**'de, **1 kişi Rol 4 (Web doğrulama)**'da, **1 kişi Rol 5 (Backend + kaptan)**'da, **1 kişi Rol 2 (Cüzdan + entegrasyon) ve Rol 3 (Solana programı)**'nı birlikte üstleniyor. Rol 1'in 2 kişiye bölünmesinde ekrana göre bölüşüm seçildi: Kişi A MVP ekranlarının ikisini (Kayıt + Mühürleme durumu), Kişi B kalan ekranları (Cüzdan bağla + ekstra ekranlar) alıyor.
 
-Mevcut durum (bu dosyanın yazıldığı an): repo'da sadece iskelet var — `program/programs/witness/src/lib.rs` yazılmış ama deploy edilmemiş, testler `it.skip` placeholder; `supabase` migration'ı hazır ama Edge Function'lar 501 stub; `/app` ve `/web` sadece README, kod yok. Türkiye'de local track olduğu teyit edildi.
+Türkiye'de local track olduğu teyit edildi.
+
+## İlerleme durumu (2026-11-25)
+
+Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı.
+
+| Durum | İş | Not |
+| --- | --- | --- |
+| ✅ | `/app` Expo dev build bootstrap | `app/` içinde native proje (`android/` prebuild'li); Expo Go değil, MWA için dev build |
+| ✅ | **İLK İŞ — Memo testi (risk kapısı)** | `witness:v1:<hash>` memo'su devnet'e düştü; MWA connect gerçek Phantom ile emülatörde çalıştı |
+| ✅ | `/web` Next.js iskeleti + Vercel deploy | `https://web-pi-cyan-30.vercel.app`; MWA dApp identity doğrulaması için `/.well-known/assetlinks.json` bu domainden servis ediliyor |
+| ✅ | Supabase link | `supabase/config.jsonc` main'de (PR #1); kimse tekrar `supabase init` çalıştırmasın |
+| ✅ | Anchor programı build + IDL | `program/target/idl/witness.json` üretildi |
+| 🚧 | Phantom in-app imza (MWA identity verified) | `autoVerify` intent-filter + assetlinks ile domain doğrulaması; rebuild sonrası test ediliyor |
+| ⬜ | Anchor devnet deploy | `declare_id!` hâlâ placeholder (`Fg6Pa…`); deploy sonrası `*_WITNESS_PROGRAM_ID` env'leri dolacak |
+| ⬜ | `register_recording` çağrısı (app) | Program deploy'unu bekler |
+| ⬜ | Anchor testleri (`program/tests/witness.ts`) | Hâlâ `it.skip` placeholder |
+
+Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 
 ## Ekip ataması
 

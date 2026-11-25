@@ -3,7 +3,9 @@ import { SolanaCluster } from '@wallet-ui/react-native-web3js'
 
 export class AppConfig {
   static name = 'Witness'
-  static uri = 'https://witness.app'
+  // MWA dApp identity doğrulaması: bu origin'in kökünde /.well-known/assetlinks.json
+  // com.anonymous.app + debug imza parmak izini listeliyor (web/public altında).
+  static uri = 'https://web-pi-cyan-30.vercel.app'
   static networks: SolanaCluster[] = [
     {
       id: 'solana:devnet',

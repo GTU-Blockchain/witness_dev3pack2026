@@ -4,16 +4,22 @@
 
 Doğrulama tamamen tarayıcıda: dosya sunucuya gitmez, sayfa doğrudan Solana RPC'den okur.
 
-## Kurulum (ilk kez, 4 yapar)
+## Kurulum
+
+> **Not (2026-11-25):** `/web` iskeleti **zaten kuruldu** ve Vercel'de canlı: `https://web-pi-cyan-30.vercel.app`. Üzerine tekrar `create-next-app` **çalıştırma** — mevcut dosyaları ve `public/.well-known/assetlinks.json`'ı siler. Mevcut Next.js app router scaffold'unun üstüne doğrulama sayfasını ekle.
 
 ```bash
 cd web
-npx create-next-app@latest . --ts --app --eslint
+npm i                       # mevcut bağımlılıklar
 npm i @solana/web3.js @coral-xyz/anchor
 npm run dev
 ```
 
 IDL gelene kadar sahte veriyle çalış; sonra `../program/target/idl/witness.json` kullan.
+
+### ⚠️ assetlinks.json'a dokunma
+
+`public/.well-known/assetlinks.json` mobil uygulamanın MWA dApp identity doğrulaması için gerekli (Android App Links). Bu domain (`web-pi-cyan-30.vercel.app`) `app/constants/app-config.ts`'teki `uri` ile birebir aynı olmalı; silme/taşıma, sonra Phantom imzayı reddeder. Domaini değiştireceksen hem `app-config.ts`'i hem assetlinks'teki paket/parmak izini birlikte güncelle.
 
 ## Sayfalar
 

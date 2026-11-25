@@ -4,15 +4,27 @@
 
 Stack: React Native + **Expo dev build** (Expo Go'da MWA çalışmaz), Solana Mobile Expo şablonundan başlanır.
 
-## Kurulum (ilk kez, 2 yapar)
+## Kurulum
+
+> **Not (2026-11-25):** `/app` scaffold'u **zaten kuruldu** (Solana Mobile `expo-web3js-minimal` şablonu, `android/` prebuild'li dev build). Üzerine tekrar `create-expo-app` **çalıştırma**. Doğrudan bağımlılıkları kurup çalıştır:
 
 ```bash
 cd app
-npx create-expo-app@latest . --template @solana-mobile/solana-mobile-expo-template
-npx expo run:android      # Seeker ya da emülatör
+npm i
+npx expo run:android      # Seeker ya da emülatör (dev build; Expo Go değil)
 ```
 
 Paketler: `@solana-mobile/mobile-wallet-adapter-protocol-web3js`, `@solana/web3.js`, `@coral-xyz/anchor`, `expo-crypto` (veya `react-native-quick-crypto`), `expo-av` / `expo-audio`.
+
+### MWA dApp identity (assetlinks + autoVerify) — bozmayın
+
+Phantom gibi cüzdanlar MWA'da dApp'in kimliğini Android App Links ile doğrular. Bunun çalışması için üç şey birbiriyle **tutarlı** olmalı:
+
+1. `app/constants/app-config.ts` → `uri = 'https://web-pi-cyan-30.vercel.app'`
+2. O domainin kökünde `/.well-known/assetlinks.json` (paket `com.anonymous.app` + imza SHA-256 parmak izi) — `/web` deploy'undan servis edilir
+3. `AndroidManifest.xml` / `app.json` → o host için `autoVerify="true"` intent-filter (prebuild'de üretilir)
+
+Üçünden biri değişir/kaldırılırsa cüzdan "identity could not be verified" der ve imzayı reddeder. Manifest değişikliği JS reload ile gelmez — native rebuild (`expo run:android`) gerekir.
 
 ## Ekranlar
 
