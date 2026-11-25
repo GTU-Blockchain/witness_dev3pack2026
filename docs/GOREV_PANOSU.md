@@ -4,29 +4,30 @@ _25 Kasım 2026 güncellemesi. Notion'daki "Görevler" tablosunun aynısı. Saat
 
 Öncelik: **Hedef** = gün sonu kapısı, **MVP** = olmazsa olmaz, **Ekstra** = MVP sağlamsa, **Hazırlık** = kurulum.
 Roller: 1 Mobil UI · 2 Cüzdan + entegrasyon · 3 Solana programı · 4 Web doğrulama · 5 Backend + kaptan.
+Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi: İLK İŞ + gün sonu hedefi ✅, kişi planları `docs/GOREV_DAGILIMI.md`.)
 
 ## Hazırlık 1 (25 Kas, Çarşamba)
 
 | Durum | Görev | Rol | Öncelik | Bitiş | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
 | [x] | Telegram: önceden kod / şablon serbest mi | 5 | Hazırlık | 25 Kas | Cevap: serbest |
-| [ ] | Telegram: Türkiye local track var mı, önceden kod jüriye beyan edilmeli mi | 5 | Hazırlık | 25 Kas 18:00 | |
+| [x] | Telegram: Türkiye local track var mı, önceden kod jüriye beyan edilmeli mi | 5 | Hazırlık | 25 Kas 18:00 | Cevap: local track var |
 | [ ] | Rolleri isimlere ata ve Kişi alanlarını doldur | Herkes | Hazırlık | 25 Kas 13:30 | |
-| [ ] | Repo aç (/app /program /web /supabase /docs) + ortak kuralları README'ye yaz | 5 | Hazırlık | 25 Kas 15:00 | Teknik dokümandaki Ortak kurallar tablosu |
-| [ ] | Geliştirme ortamı kur ve hello world çalıştır (Android Studio, Rust, Solana CLI, Anchor, Node) | Herkes | Hazırlık | 25 Kas 15:00 | |
-| [ ] | Hesaplar: ElevenLabs API key, Supabase projesi, Vercel, her cüzdana devnet SOL | 5 | Hazırlık | 25 Kas 16:00 | |
-| [ ] | Seeker'da Seed Vault Wallet kurulu mu, devnet'e geçiyor mu kontrol et | 2 | MVP | 25 Kas 14:00 | |
-| [ ] | MWA dokümanı: signAndSendTransactions üçüncü parti uygulamada çalışıyor mu | 2 | MVP | 25 Kas 14:00 | |
-| [ ] | **İLK İŞ:** Seeker'dan MWA ile devnet'e hash içeren Memo işlemi gönder (Memo yedeği de bu) | 2 | MVP | 25 Kas 18:00 | Çalışmazsa tüm ekibe haber ver, emülatör + mock wallet yedeğine geç |
+| [x] | Repo aç (/app /program /web /supabase /docs) + ortak kuralları README'ye yaz | 5 | Hazırlık | 25 Kas 15:00 | Teknik dokümandaki Ortak kurallar tablosu |
+| [x] | Geliştirme ortamı kur ve hello world çalıştır (Android Studio, Rust, Solana CLI, Anchor, Node) | Herkes | Hazırlık | 25 Kas 15:00 | Referans makinede app build + çalışıyor |
+| [ ] | Hesaplar: ElevenLabs API key, Supabase projesi, Vercel, her cüzdana devnet SOL | 5 | Hazırlık | 25 Kas 16:00 | Supabase + Vercel hazır; ElevenLabs + cüzdan SOL kaldı |
+| [x] | Seeker'da Seed Vault Wallet kurulu mu, devnet'e geçiyor mu kontrol et | 2 | MVP | 25 Kas 14:00 | Seeker yok; emülatör + Phantom ile devnet bağlantısı teyit edildi |
+| [x] | MWA dokümanı: signAndSendTransactions üçüncü parti uygulamada çalışıyor mu | 2 | MVP | 25 Kas 14:00 | Pratikte kanıtlandı (Phantom in-app imza) |
+| [x] | **İLK İŞ:** Seeker'dan MWA ile devnet'e hash içeren Memo işlemi gönder (Memo yedeği de bu) | 2 | MVP | 25 Kas 18:00 | ✅ In-app Phantom imzası → devnet finalized (tx 246bvDWt…F4iYn) |
 | [ ] | Kayıt ekranı: kaydet / durdur / dinle, m4a (AAC, mono, 44.1 kHz) çıktısı | 1 | MVP | 25 Kas 22:00 | |
 | [ ] | Dosyanın SHA-256 hash'ini telefonda hesapla | 2 | MVP | 25 Kas 20:00 | |
 | [ ] | Anchor programı: Recording hesabı + register_recording + testler | 3 | MVP | 25 Kas 20:00 | Hesap yapısını 2 ve 4 onaylasın |
 | [ ] | Programı devnet'e deploy et, program ID + IDL paylaş | 3 | MVP | 25 Kas 23:00 | Anchor programı + testler |
-| [ ] | Doğrulama sayfası iskeleti (Next.js, tarayıcıda hash, sahte veriyle sonuç ekranı) | 4 | MVP | 25 Kas 22:00 | |
+| [~] | Doğrulama sayfası iskeleti (Next.js, tarayıcıda hash, sahte veriyle sonuç ekranı) | 4 | MVP | 25 Kas 22:00 | Next.js + Vercel canlı; hash/sonuç ekranı kaldı |
 | [ ] | Hash çapraz testi: aynı m4a telefonda, tarayıcıda ve `shasum -a 256` ile aynı hash | 4 | MVP | 25 Kas 23:00 | Kayıt ekranı (1) + tarayıcıda hash (4); 1 ile birlikte |
 | [ ] | Supabase: recordings tablosu + private storage bucket + RLS | 5 | Ekstra | 25 Kas 22:00 | |
 | [ ] | ElevenLabs Scribe denemesi (Türkçe kayıt) | 5 | Ekstra | 25 Kas 22:00 | |
-| [ ] | **GÜN SONU HEDEFİ:** Seeker'dan devnet'e imzalı işlem gitti, Explorer'da görünüyor | Herkes | Hedef | 25 Kas 23:59 | Gitmediyse 26 Kas sabahı herkes 2'ye destek |
+| [x] | **GÜN SONU HEDEFİ:** Seeker'dan devnet'e imzalı işlem gitti, Explorer'da görünüyor | Herkes | Hedef | 25 Kas 23:59 | ✅ In-app Phantom imzası devnet'te finalized (Memo `witness:v1:0000…`) |
 
 ## Hazırlık 2 (26 Kas, Perşembe)
 
