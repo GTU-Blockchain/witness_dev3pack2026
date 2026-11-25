@@ -1,0 +1,41 @@
+# Ortam
+.env
+.env.*
+!.env.example
+
+# Node / Expo / Next
+node_modules/
+.expo/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# Android / iOS
+android/
+ios/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Rust / Anchor (IDL ortak dosya, commit'lenir)
+program/target/*
+!program/target/idl/
+!program/target/types/
+program/.anchor/
+test-ledger/
+**/*-keypair.json
+id.json
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# OS / editör
+.DS_Store
+.vscode/
+.idea/
