@@ -24,7 +24,7 @@ IDL gelene kadar sahte veriyle çalış; sonra `../program/target/idl/witness.js
 ## Sayfalar
 
 - `/` : sürükle bırak, "Dosya bilgisayarınızdan çıkmaz"
-- `/v/<hash>` : paylaşım linki; `#k=` varsa şifreli dosyayı indir, çöz, doğrula. Memo yedeğinde `?tx=<imza>`
+- `/v/<hash>` : paylaşım linki; `#k=` varsa şifreli dosyayı indir, çöz, doğrula. Memo yedeğinde `?tx=<imza>` → tam sözleşme: [`docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md)
 
 ## Doğrulama
 
