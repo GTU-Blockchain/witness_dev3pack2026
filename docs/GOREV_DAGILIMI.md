@@ -19,10 +19,12 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | `/web` Next.js iskeleti + Vercel deploy | `https://web-pi-cyan-30.vercel.app`; MWA dApp identity doğrulaması için `/.well-known/assetlinks.json` bu domainden servis ediliyor |
 | ✅ | Supabase link | `supabase/config.jsonc` main'de (PR #1); kimse tekrar `supabase init` çalıştırmasın |
 | ✅ | Anchor programı build + IDL | `program/target/idl/witness.json` üretildi |
-| 🚧 | Phantom in-app imza (MWA identity verified) | `autoVerify` intent-filter + assetlinks ile domain doğrulaması; rebuild sonrası test ediliyor |
-| ⬜ | Anchor devnet deploy | `declare_id!` hâlâ placeholder (`Fg6Pa…`); deploy sonrası `*_WITNESS_PROGRAM_ID` env'leri dolacak |
-| ⬜ | `register_recording` çağrısı (app) | Program deploy'unu bekler |
-| ⬜ | Anchor testleri (`program/tests/witness.ts`) | Hâlâ `it.skip` placeholder |
+| ✅ | Phantom in-app imza | `witness:v1:0000…` memo'su Phantom ile imzalanıp devnet'te **finalized** (tx `246bvDWt…F4iYn`) |
+| ✅ | Anchor testleri (4 senaryo) | `program/tests/witness.ts` localnet'te geçti (geçerli kayıt / çift hash / duration 0 / location) |
+| ✅ | SHA-256 hash util | `app/utils/witness-hash.ts` (expo-crypto), `shasum -a 256` ile doğrulandı |
+| ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_YEDEGI_SOZLESMESI.md` (Rol 4 bunu uygular) |
+| ⛔ | Anchor devnet deploy | **Funding bekliyor:** deployer `89y28j…FNRm`'ye ~4 devnet SOL lazım; faucet 8 saatte 2 istek limiti. Deploy sonrası `*_WITNESS_PROGRAM_ID` env'leri dolacak |
+| ⬜ | `register_recording` çağrısı (app) | Program deploy'unu bekler (deploy açılınca ilk iş) |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 
