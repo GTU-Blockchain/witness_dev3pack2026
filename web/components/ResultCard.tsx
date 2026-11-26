@@ -68,7 +68,7 @@ export function ResultCard({
       </div>
 
       {open && (
-        <DetailsModal fileName={fileName} hash={hash} result={result} sig={sig} onClose={() => setOpen(false)} />
+        <DetailsModal fileName={fileName} fileType={file.type} hash={hash} result={result} sig={sig} onClose={() => setOpen(false)} />
       )}
     </div>
   )

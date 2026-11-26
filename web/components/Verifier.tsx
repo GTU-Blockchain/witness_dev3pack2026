@@ -19,7 +19,14 @@ export function Verifier() {
     const fileName = file.name
     setState({ phase: 'working', fileName, step: 'Parmak izi hesaplanıyor…' })
     try {
-      const hash = await sha256HexOfFile(file)
+      // Büyük dosyada parça parça hash'lenir; ilerleme yüzde olarak gösterilir (web/README.md → Büyük dosyalar)
+      let lastPct = -1
+      const hash = await sha256HexOfFile(file, (f) => {
+        const pct = Math.floor(f * 100)
+        if (pct === lastPct) return
+        lastPct = pct
+        setState({ phase: 'working', fileName, step: `Parmak izi hesaplanıyor… %${pct}` })
+      })
       setState({ phase: 'working', fileName, hash, step: 'Zincir kaydı okunuyor…' })
       const result = await lookupRecording(hash)
       setState({ phase: 'done', fileName, hash, result, file })

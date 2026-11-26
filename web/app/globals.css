@@ -1,31 +1,71 @@
-/* 4: Witness doğrulama sayfası stilleri. Açık/koyu tema otomatik; renkler token üzerinden. */
-:root {
-  --ground: #f5f6f8;
-  --surface: #ffffff;
-  --ink: #181b20;
-  --muted: #5f6873;
-  --faint: #8a929c;
-  --border: #e4e7ec;
-  --border-strong: #d2d7df;
-  --accent: #2f5bea;
-  --ok-ink: #12714a;
-  --ok-bg: #effaf3;
-  --ok-border: #b7e6cb;
-  --bad-ink: #b4231f;
-  --bad-bg: #fdf2f1;
-  --bad-border: #f3c9c6;
-  --shadow: 0 1px 2px rgba(20, 25, 35, .04), 0 8px 28px rgba(20, 25, 35, .07);
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+/* 4: Witness doğrulama sayfası stilleri. Renkler token üzerinden.
+   RENKLER: Witness ortak teması — app/constants/theme.ts (C) ile birebir aynı değerler. Uygulama
+   ile doğrulama sayfası aynı görünsün diye web kendi paletini tanımlamaz; theme.ts değişirse
+   aşağıdaki :root bloğu da güncellenmeli (web/README.md → Tema). Ortak tema sadece koyu.
+   Köşe yarıçapları ve yazı tipleri Gemini tasarım maketinden (ortak temada karşılıkları yok). */
+
+/* Yazı tipleri yerelden sunulur (web/public/fonts, SIL OFL 1.1). Sayfa harici bir
+   yazı tipi sunucusuna istek atmaz. Türkçe karakterler (ğ, ş, İ, ı) latin-ext'te. */
+@font-face {
+  font-family: 'Google Sans Flex';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/google-sans-flex-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #0d1014; --surface: #161a20; --ink: #e7eaef; --muted: #9aa2ad; --faint: #6b7480;
-    --border: #242a32; --border-strong: #323a44; --accent: #6d8bfb;
-    --ok-ink: #5fd496; --ok-bg: #10231a; --ok-border: #1f4a35;
-    --bad-ink: #f0837f; --bad-bg: #231213; --bad-border: #4a2422;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .4);
-  }
+@font-face {
+  font-family: 'Google Sans Flex';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/google-sans-flex-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Google Sans Code';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/google-sans-code-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Google Sans Code';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/google-sans-code-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: dark;
+  /* Ortak tema (app/constants/theme.ts → C) */
+  --ground: #0B0F17;           /* C.bg */
+  --surface: #121926;          /* C.surface */
+  --ink: #F8FAFC;              /* C.text */
+  --muted: #CBD5E1;            /* C.textSoft */
+  --faint: #94A3B8;            /* C.muted */
+  --border: #1E293B;           /* C.border */
+  --border-strong: color-mix(in srgb, #94A3B8 35%, transparent); /* C.muted, %35 (temada daha güçlü çizgi yok) */
+  --accent: #34D399;           /* C.emerald: bağlantı, odak, sürükleme vurgusu */
+  --btn-bg: #34D399;           /* C.emerald: birincil buton (uygulamadaki gibi) */
+  --btn-ink: #0B1F14;          /* C.onEmerald */
+  --ok-ink: #34D399;           /* C.emerald */
+  --ok-bg: rgba(16, 185, 129, 0.14);  /* C.emeraldSoft */
+  --ok-border: color-mix(in srgb, #34D399 35%, transparent);
+  --bad-ink: #E5534B;          /* C.red */
+  --bad-bg: rgba(229, 83, 75, 0.12);  /* C.redSoft */
+  --bad-border: color-mix(in srgb, #E5534B 40%, transparent);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .4);
+  /* Köşe yarıçapları (Gemini shape ölçeği) */
+  --r-l: 24px;
+  --r-m: 16px;
+  --r-s: 8px;
+  --r-full: 999px;
+  --mono: 'Google Sans Code', 'Google Sans Mono', ui-monospace, Menlo, Consolas, monospace;
+  --sans: 'Google Sans Flex', 'Google Sans Text', 'Google Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -42,7 +82,7 @@ body {
 header { margin-bottom: 24px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand .mark {
-  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  width: 34px; height: 34px; border-radius: 12px; flex: none;
   display: grid; place-items: center; font-size: 17px;
   background: var(--surface); border: 1px solid var(--border);
 }
@@ -51,11 +91,12 @@ header p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
 
 .card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; box-shadow: var(--shadow); overflow: hidden;
+  border-radius: var(--r-l); box-shadow: var(--shadow); overflow: hidden;
 }
 
 .drop {
-  margin: 4px; padding: 30px 20px; border-radius: 13px;
+  display: block; /* <label> varsayılanı inline: çerçeve/köşe bozuk çiziliyordu */
+  margin: 6px; padding: 30px 20px; border-radius: calc(var(--r-l) - 6px);
   border: 1.5px dashed var(--border-strong);
   text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
   background: transparent;
@@ -69,7 +110,7 @@ header p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
 .result { padding: 22px; border-top: 1px solid var(--border); }
 .result .head { display: flex; align-items: center; gap: 12px; }
 .result .badge {
-  width: 40px; height: 40px; border-radius: 11px; flex: none;
+  width: 40px; height: 40px; border-radius: var(--r-full); flex: none;
   display: grid; place-items: center; font-size: 20px; font-weight: 700;
 }
 .result h2 { margin: 0; font-size: 17px; font-weight: 640; letter-spacing: -.01em; }
@@ -86,7 +127,7 @@ header p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
 .r-bad h2 { color: var(--bad-ink); }
 
 .wave {
-  margin-top: 16px; padding: 14px 14px 12px; border-radius: 11px;
+  margin-top: 16px; padding: 14px 14px 12px; border-radius: var(--r-m);
   background: var(--ground); border: 1px solid var(--border);
 }
 .wave .wmeta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
@@ -97,9 +138,9 @@ header p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
 .actions { display: flex; gap: 8px; margin-top: 18px; }
 button {
   font-family: inherit; font-size: 13.5px; font-weight: 550; cursor: pointer;
-  border-radius: 9px; padding: 9px 14px; transition: background .12s, border-color .12s, filter .12s;
+  border-radius: var(--r-full); padding: 9px 18px; transition: background .12s, border-color .12s, filter .12s;
 }
-.btn-primary { background: var(--accent); color: #fff; border: 1px solid transparent; }
+.btn-primary { background: var(--btn-bg); color: var(--btn-ink); border: 1px solid transparent; }
 .btn-primary:hover { filter: brightness(1.05); }
 .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border-strong); }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
@@ -111,12 +152,12 @@ button {
 .foot b { color: var(--muted); font-weight: 600; }
 
 .overlay {
-  position: fixed; inset: 0; background: rgba(12, 15, 20, .55);
+  position: fixed; inset: 0; background: color-mix(in srgb, var(--ground) 75%, transparent); /* C.bg */
   display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10;
   backdrop-filter: blur(2px);
 }
 .modal {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-l);
   box-shadow: var(--shadow); width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto;
 }
 .modal .m-head {
@@ -136,7 +177,7 @@ dd.m { font-family: var(--mono); font-size: 12.5px; }
 dd b { font-variant-numeric: tabular-nums; font-weight: 600; }
 dd a { color: var(--accent); text-decoration: none; }
 dd a:hover { text-decoration: underline; }
-.tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--ground); color: var(--muted); border: 1px solid var(--border); }
+.tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: var(--r-full); background: var(--ground); color: var(--muted); border: 1px solid var(--border); }
 .note { font-size: 11.5px; color: var(--faint); padding: 0 20px 18px; line-height: 1.5; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

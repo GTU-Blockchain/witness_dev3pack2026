@@ -2,7 +2,7 @@
 // 4: Doğrulama detayları pop-up'ı. Ana ekran sade kalsın diye tüm teknik alanlar burada.
 import { useEffect } from 'react'
 import type { LookupResult } from '@/lib/recording'
-import { explorerAddress, explorerTx, formatDuration, formatIstanbul, shortAddress } from '@/lib/format'
+import { explorerAddress, explorerTx, formatDuration, formatIstanbul, shortAddress, shouldShowDuration } from '@/lib/format'
 
 function Row({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
@@ -15,12 +15,14 @@ function Row({ label, children, mono }: { label: string; children: React.ReactNo
 
 export function DetailsModal({
   fileName,
+  fileType,
   hash,
   result,
   sig,
   onClose,
 }: {
   fileName: string
+  fileType: string // tarayıcının bildirdiği MIME türü; bilinmiyorsa ''
   hash: string
   result: LookupResult
   sig: string | null
@@ -76,7 +78,7 @@ export function DetailsModal({
                   {shortAddress(rec.pda)}
                 </a>
               </Row>
-              <Row label="Süre">{formatDuration(rec.durationMs)}</Row>
+              {shouldShowDuration(fileType, rec.durationMs) && <Row label="Süre">{formatDuration(rec.durationMs)}</Row>}
               <Row label="Konum taahhüdü">
                 {rec.hasLocationCommitment ? (
                   <>

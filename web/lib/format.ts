@@ -22,6 +22,17 @@ export function formatDuration(ms: number): string {
   return m > 0 ? `${m} dk ${s} sn` : `${s} sn`
 }
 
+/**
+ * Süre gösterilmeli mi? Program `duration_ms > 0` istediği için fotoğraf gibi süresiz dosyalar
+ * zincire `duration_ms = 1` ile yazılır (docs/TEKNIK_DOKUMAN.md → Supabase → duration_ms).
+ * Kural: sadece ses/videoda göster. Tarayıcı türü bilmiyorsa (boş MIME) 1 ms'yi "süresiz" say.
+ */
+export function shouldShowDuration(mimeType: string, durationMs: number): boolean {
+  if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) return true
+  if (mimeType === '') return durationMs > 1
+  return false
+}
+
 export function explorerAddress(addr: string): string {
   return `https://explorer.solana.com/address/${addr}?cluster=${SOLANA_CLUSTER}`
 }

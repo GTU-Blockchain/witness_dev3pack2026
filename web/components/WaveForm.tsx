@@ -4,6 +4,10 @@
 import { useEffect, useRef, useState } from 'react'
 
 const BUCKETS = 52
+// Ses çözme dosyanın tamamını belleğe alır (ve çözülmüş PCM bundan da büyüktür). Hash parça parça
+// hesaplansa bile dalga formu büyük dosyada sekmeyi çökertebilir; bu yüzden üstünde çizilmez.
+// Doğrulama sonucunu etkilemez (✅/❌ hash'ten gelir). Bkz. web/README.md → Büyük dosyalar.
+const MAX_WAVEFORM_BYTES = 64 * 1024 * 1024
 
 function fmtDur(sec: number): string {
   const m = Math.floor(sec / 60)
@@ -72,7 +76,7 @@ export function WaveForm({ file, colorVar }: { file: File; colorVar: string }) {
 
   useEffect(() => {
     let cancelled = false
-    if (!file.type.startsWith('audio')) return
+    if (!file.type.startsWith('audio') || file.size > MAX_WAVEFORM_BYTES) return
     peaksFromFile(file)
       .then((r) => !cancelled && setState(r))
       .catch(() => {})
@@ -83,7 +87,7 @@ export function WaveForm({ file, colorVar }: { file: File; colorVar: string }) {
 
   useEffect(() => {
     if (state && canvasRef.current) {
-      const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim() || '#16a34a'
+      const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim() || '#34D399' /* C.emerald */
       draw(canvasRef.current, state.peaks, color)
     }
   }, [state, colorVar])
