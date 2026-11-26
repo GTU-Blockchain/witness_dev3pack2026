@@ -1,14 +1,14 @@
+import { Verifier } from '@/components/Verifier'
+
 export default function Home() {
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '48px 24px' }}>
-      <h1>Witness</h1>
+    <main style={{ maxWidth: 680, margin: '0 auto', padding: '48px 16px' }}>
+      <h1 style={{ marginTop: 0 }}>Witness</h1>
       <p>
-        Bir ses kaydının mühürlendikten sonra değiştirilmediğini kanıtlar. Doğrulama sayfası (dosya
-        yükle → tarayıcıda hash → zincirle karşılaştır) yapım aşamasında.
+        Bir ses kaydının mühürlendikten sonra değiştirilmediğini doğrulayın. Dosyanın parmak izi tarayıcınızda
+        hesaplanır ve doğrudan Solana (devnet) kaydıyla karşılaştırılır.
       </p>
-      <p style={{ color: '#666', fontSize: 14 }}>
-        Bu sayfa içeriğin doğru olduğunu değil, sonradan değiştirilmediğini kanıtlar.
-      </p>
+      <Verifier />
     </main>
   )
 }
