@@ -5,11 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-# 3: `anchor keys sync` ile gerçek program ID'yi yaz
-witness = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+witness = "2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ"
 
 [programs.localnet]
 witness = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[registry]
+url = "https://api.apr.dev"
 
 [provider]
 cluster = "devnet"

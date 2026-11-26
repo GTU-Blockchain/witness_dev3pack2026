@@ -4,7 +4,7 @@
 use anchor_lang::prelude::*;
 
 // 3: deploy öncesi `anchor keys sync` ile güncelle.
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ");
 
 pub const RECORDING_SEED: &[u8] = b"rec";
 
