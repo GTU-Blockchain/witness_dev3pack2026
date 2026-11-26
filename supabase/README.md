@@ -36,6 +36,7 @@ supabase functions deploy register transcribe upload-url --no-verify-jwt
 | `config.jsonc` | Supabase CLI ayarları (lokal portlar, servisler) |
 | `migrations/20261125000000_recordings.sql` | `recordings` tablosu, RLS (herkes okur, anon yazamaz), private `recordings` bucket |
 | `migrations/20261125154643_recordings_transcript_status_default.sql` | `transcript_status` varsayılanı `pending` |
+| `migrations/20261126102917_recordings_bucket_read_and_limits.sql` | Bucket'a 25 MB sınırı; public key ile okuma (dosyalar şifreli) |
 | `functions/register` | Girdi: `audio_hash`, `tx_signature`, `wallet`. İşlemi devnet'ten okur, PDA'daki hash/cüzdan eşleşirse satır ekler |
 | `functions/transcribe` | Girdi: `audio_hash` + ses. ElevenLabs Scribe → `transcript`. API anahtarı sadece burada |
 | `functions/upload-url` | Girdi: `audio_hash`. Kayıt `register` edildiyse şifreli dosya için tek seferlik yükleme URL'si |
@@ -96,6 +97,40 @@ Sonuç ayrıca `recordings` tablosuna yazılır (`transcript`, `transcript_lang`
 | 500 | `db_error`, `not_configured` | Sunucu tarafı sorun | Bildir |
 
 Bilinen sınır: aynı kayıt için **aynı anda** iki istek gelirse ikisi de ElevenLabs'e gidebilir (ilk cevap gelene kadar). Uygulama her kayıt için tek çağrı yaptığı sürece sorun değil.
+
+## `upload-url` API ve paylaşılan dosyayı okuma (rol 2 yükler, rol 4 okur)
+
+Kullanıcı "Paylaş" dediğinde: telefon dosyayı AES-256-GCM ile şifreler → `upload-url`'den tek seferlik izin alır → şifreli dosyayı yükler. Sunucu dosyayı çözemez; anahtar sadece paylaşım linkinin `#k=` kısmında.
+
+**Yükleme (uygulama):**
+
+```ts
+const { data, error } = await supabase.functions.invoke("upload-url", { body: { audio_hash: audioHash } });
+// data: { path: "<audio_hash>.m4a.enc", token, expires_in: 7200 }
+
+await supabase.storage
+  .from("recordings")
+  .uploadToSignedUrl(data.path, data.token, encryptedBytes, { contentType: "application/octet-stream" });
+```
+
+| HTTP | `error` | Anlamı |
+| --- | --- | --- |
+| 400 | `bad_json`, `bad_audio_hash` | İstek biçimi yanlış |
+| 404 | `not_registered` | Önce `register` başarılı olmalı |
+| 409 | `already_uploaded` | Bu kayıt için dosya zaten var; üzerine yazılamaz. Paylaşım linki zaten çalışır |
+| 500 | `db_error`, `storage_error` | Sunucu tarafı sorun |
+
+Kurallar: yol her zaman `<audio_hash>.m4a.enc`, dosya en fazla **25 MB**, yüklenen dosyanın üzerine yazılamaz, link 2 saat geçerli. Public key'le linksiz yükleme RLS'ye takılır.
+
+**Okuma (doğrulama sayfası):** `recordings` satırında `storage_path` doluysa dosya paylaşılmıştır. Public key ile:
+
+```ts
+const { data } = await supabase.storage.from("recordings").createSignedUrl(row.storage_path, 3600); // 1 saat
+const encrypted = await (await fetch(data.signedUrl)).arrayBuffer();
+// #k= anahtarıyla tarayıcıda çöz → SHA-256 → audio_hash ile ve zincirle karşılaştır
+```
+
+Not: `storage_path`, yükleme izni verildiği anda yazılır. Yükleme yarıda kaldıysa dosya bulunamaz; sayfa bunu "dosya henüz yüklenmemiş" olarak göstermeli.
 
 ## Görevler
 
