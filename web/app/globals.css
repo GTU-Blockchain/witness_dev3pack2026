@@ -1,6 +1,8 @@
-/* 4: Witness doğrulama sayfası stilleri. Açık/koyu tema otomatik; renkler token üzerinden.
-   Renkler ve köşe yarıçapları ekipte paylaşılan Gemini tasarım maketinin ("Witness Adli Doğrulama")
-   tasarım sisteminden alındı: açık tema = maketin açık token'ları, koyu tema = maketin koyu token'ları. */
+/* 4: Witness doğrulama sayfası stilleri. Renkler token üzerinden.
+   RENKLER: Witness ortak teması — app/constants/theme.ts (C) ile birebir aynı değerler. Uygulama
+   ile doğrulama sayfası aynı görünsün diye web kendi paletini tanımlamaz; theme.ts değişirse
+   aşağıdaki :root bloğu da güncellenmeli (web/README.md → Tema). Ortak tema sadece koyu.
+   Köşe yarıçapları ve yazı tipleri Gemini tasarım maketinden (ortak temada karşılıkları yok). */
 
 /* Yazı tipleri yerelden sunulur (web/public/fonts, SIL OFL 1.1). Sayfa harici bir
    yazı tipi sunucusuna istek atmaz. Türkçe karakterler (ğ, ş, İ, ı) latin-ext'te. */
@@ -38,25 +40,25 @@
 }
 
 :root {
-  color-scheme: light dark;
-  /* Gemini açık token'ları: surface-dim, surface-bright, on-surface, outline… */
-  --ground: #f2f0f0;
-  --surface: #ffffff;
-  --ink: #000000;
-  --muted: rgba(0, 0, 0, .62);
-  --faint: rgba(0, 0, 0, .5);
-  --border: #e3e3e3;
-  --border-strong: rgba(0, 0, 0, .22);
-  --accent: #3186ff;           /* bağlantı, odak, sürükleme vurgusu (primary) */
-  --btn-bg: #9dd2ff;           /* birincil buton (lumi-btn--primary = accent) */
-  --btn-ink: #000000;
-  --ok-ink: #008052;
-  --ok-bg: #daf9d4;
-  --ok-border: color-mix(in srgb, #008052 30%, transparent);
-  --bad-ink: #de2d29;
-  --bad-bg: #ffdeec;
-  --bad-border: color-mix(in srgb, #de2d29 30%, transparent);
-  --shadow: 0 0 20px 0 rgba(0, 0, 0, .11);
+  color-scheme: dark;
+  /* Ortak tema (app/constants/theme.ts → C) */
+  --ground: #0B0F17;           /* C.bg */
+  --surface: #121926;          /* C.surface */
+  --ink: #F8FAFC;              /* C.text */
+  --muted: #CBD5E1;            /* C.textSoft */
+  --faint: #94A3B8;            /* C.muted */
+  --border: #1E293B;           /* C.border */
+  --border-strong: color-mix(in srgb, #94A3B8 35%, transparent); /* C.muted, %35 (temada daha güçlü çizgi yok) */
+  --accent: #34D399;           /* C.emerald: bağlantı, odak, sürükleme vurgusu */
+  --btn-bg: #34D399;           /* C.emerald: birincil buton (uygulamadaki gibi) */
+  --btn-ink: #0B1F14;          /* C.onEmerald */
+  --ok-ink: #34D399;           /* C.emerald */
+  --ok-bg: rgba(16, 185, 129, 0.14);  /* C.emeraldSoft */
+  --ok-border: color-mix(in srgb, #34D399 35%, transparent);
+  --bad-ink: #E5534B;          /* C.red */
+  --bad-bg: rgba(229, 83, 75, 0.12);  /* C.redSoft */
+  --bad-border: color-mix(in srgb, #E5534B 40%, transparent);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .4);
   /* Köşe yarıçapları (Gemini shape ölçeği) */
   --r-l: 24px;
   --r-m: 16px;
@@ -64,18 +66,6 @@
   --r-full: 999px;
   --mono: 'Google Sans Code', 'Google Sans Mono', ui-monospace, Menlo, Consolas, monospace;
   --sans: 'Google Sans Flex', 'Google Sans Text', 'Google Sans', ui-sans-serif, system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Gemini koyu token'ları (maketteki değerler birebir) */
-    --ground: #0f0f0f; --surface: #1c1c1c; --ink: #e0e0e0;
-    --muted: rgba(255, 255, 255, .62); --faint: rgba(255, 255, 255, .5);
-    --border: #2d2f38; --border-strong: rgba(255, 255, 255, .2);
-    --accent: #9dd2ff; --btn-bg: #1f3b9b; --btn-ink: #e0e0e0;
-    --ok-ink: #0ebc5f; --ok-bg: #002220; --ok-border: color-mix(in srgb, #0ebc5f 35%, transparent);
-    --bad-ink: #ff4c45; --bad-bg: #3c0202; --bad-border: color-mix(in srgb, #ff4c45 35%, transparent);
-    --shadow: 0 0 20px 0 rgba(0, 0, 0, .5);
-  }
 }
 
 * { box-sizing: border-box; }
@@ -162,7 +152,7 @@ button {
 .foot b { color: var(--muted); font-weight: 600; }
 
 .overlay {
-  position: fixed; inset: 0; background: rgba(12, 15, 20, .55);
+  position: fixed; inset: 0; background: color-mix(in srgb, var(--ground) 75%, transparent); /* C.bg */
   display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10;
   backdrop-filter: blur(2px);
 }

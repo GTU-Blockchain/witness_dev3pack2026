@@ -36,6 +36,14 @@ Dipnot her zaman: "Bu sayfa içeriğin doğru olduğunu değil, sonradan değiş
 
 Süre: Witness her dosya türünü mühürleyebildiği için fotoğraf gibi süresiz dosyalar zincire `duration_ms = 1` ile yazılır (program `> 0` istiyor). "Süre" satırı sadece ses/video dosyalarında gösterilir; tarayıcı türü bilmiyorsa 1 ms süresiz sayılır (`lib/format.ts` → `shouldShowDuration`).
 
+## Tema
+
+Renkler Witness ortak temasıyla birebir aynı: `app/constants/theme.ts` (`C`). Doğrulama sayfası, uygulamadan geçildiğinde aynı görünsün diye kendi paletini tanımlamaz. Ortak tema sadece koyu olduğu için web de sadece koyu temadadır.
+
+- Eşleme `app/globals.css` başındaki `:root` bloğunda, her satırda karşılığıyla birlikte: `--ground` = `C.bg`, `--surface` = `C.surface`, `--ink` = `C.text`, `--muted` = `C.textSoft`, `--faint` = `C.muted`, `--border` = `C.border`, ✅ = `C.emerald` / `C.emeraldSoft`, ❌ = `C.red` / `C.redSoft`, birincil buton = `C.emerald` + `C.onEmerald`.
+- `theme.ts` değişirse bu blok da güncellenmeli. Bileşenlerde elle renk yazılmaz, sadece token kullanılır.
+- Köşe yarıçapları ve yazı tipleri (Google Sans Flex / Code, `public/fonts`) ortak temada tanımlı olmadığı için Gemini tasarım maketinden alındı.
+
 ## Büyük dosyalar
 
 **Sorun:** İlk sürüm hash için `file.arrayBuffer()` kullanıyordu; bu, dosyanın tamamını tek seferde belleğe alır. Artık video da mühürlenebildiği için yüzlerce MB'lık bir dosyada (özellikle telefonda) tarayıcı sekmesi çökebilir. WebCrypto'nun (`crypto.subtle.digest`) parça parça hash'leme desteği yok.

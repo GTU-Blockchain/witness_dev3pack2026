@@ -87,7 +87,7 @@ export function WaveForm({ file, colorVar }: { file: File; colorVar: string }) {
 
   useEffect(() => {
     if (state && canvasRef.current) {
-      const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim() || '#16a34a'
+      const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim() || '#34D399' /* C.emerald */
       draw(canvasRef.current, state.peaks, color)
     }
   }, [state, colorVar])
