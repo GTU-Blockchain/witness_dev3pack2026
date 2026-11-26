@@ -71,6 +71,32 @@ const { data, error } = await supabase.functions.invoke("register", {
 **Lokal test:** devnet'teki gerçek bir kayıtla
 `curl -X POST http://127.0.0.1:54321/functions/v1/register -H 'Content-Type: application/json' -d '{"audio_hash":"04996e6d7ffa5d4a6074272e867b29a789c07b0a45a5e63b493dd2919fd187c7","tx_signature":"2BEZqQvVDpgcBM4q5sjeND7MjL4M8apePbtDNwbzJCQGv9GB6vRBVWrndabW7tSkACPPPVZeJH8aMixo41tt9WU8","wallet":"89y28jHhGwDsW3h36vhdE9VL1LpUgX1NKUy92cpqFNRm"}'`
 
+## `transcribe` API (uygulama için, rol 2)
+
+`register` başarılı olduktan sonra **arka planda** çağrılır; Mühürlendi ekranı transkripti beklemez. Gönderilen dosya **mühürlenen dosyanın aynısı** olmalı (şifresiz m4a): fonksiyon dosyanın SHA-256'sını `audio_hash` ile karşılaştırır, register edilmemiş ya da farklı bir dosya için ElevenLabs'e hiç gitmez. Transkript zaten yapıldıysa tekrar ücretlendirmez, kayıtlı sonucu döner.
+
+```ts
+const form = new FormData();
+form.append("audio_hash", audioHash);                                    // 64 karakter küçük harf hex
+form.append("file", { uri: fileUri, name: "recording.m4a", type: "audio/mp4" } as any); // React Native
+
+const { data, error } = await supabase.functions.invoke("transcribe", { body: form });
+// data: { status: "done" | "already_done", transcript, transcript_lang: "tr" | "en" | null }
+```
+
+Sonuç ayrıca `recordings` tablosuna yazılır (`transcript`, `transcript_lang`, `transcript_status: "done"`); kayıt listesi ve doğrulama sayfası oradan okur. `transcript_status` değerleri değişmedi: `pending` → `done` ya da `failed`.
+
+| HTTP | `error` | Anlamı | Uygulama ne yapmalı |
+| --- | --- | --- | --- |
+| 400 | `bad_form`, `bad_audio_hash`, `missing_file` | İstek biçimi yanlış | Hata: kodu düzelt |
+| 400 | `hash_mismatch` | Gönderilen dosya bu kayıt değil | Hata: mühürlenen dosyanın aynısını gönder (yeniden kodlanmamış) |
+| 404 | `not_registered` | Önce `register` başarılı olmalı | `register`'dan sonra çağır |
+| 413 | `file_too_large` | 25 MB üstü | Demo için kısa kayıt |
+| 502 | `transcription_failed` | ElevenLabs hata verdi; satır `failed` oldu | Daha sonra tekrar denenebilir |
+| 500 | `db_error`, `not_configured` | Sunucu tarafı sorun | Bildir |
+
+Bilinen sınır: aynı kayıt için **aynı anda** iki istek gelirse ikisi de ElevenLabs'e gidebilir (ilk cevap gelene kadar). Uygulama her kayıt için tek çağrı yaptığı sürece sorun değil.
+
 ## Görevler
 
 | Tarih | Görev |
