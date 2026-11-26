@@ -15,7 +15,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [ ] | Rolleri isimlere ata ve Kişi alanlarını doldur | Herkes | Hazırlık | 25 Kas 13:30 | |
 | [x] | Repo aç (/app /program /web /supabase /docs) + ortak kuralları README'ye yaz | 5 | Hazırlık | 25 Kas 15:00 | Teknik dokümandaki Ortak kurallar tablosu |
 | [x] | Geliştirme ortamı kur ve hello world çalıştır (Android Studio, Rust, Solana CLI, Anchor, Node) | Herkes | Hazırlık | 25 Kas 15:00 | Referans makinede app build + çalışıyor |
-| [ ] | Hesaplar: ElevenLabs API key, Supabase projesi, Vercel, her cüzdana devnet SOL | 5 | Hazırlık | 25 Kas 16:00 | Supabase + Vercel hazır; ElevenLabs + cüzdan SOL kaldı |
+| [~] | Hesaplar: ElevenLabs API key, Supabase projesi, Vercel, her cüzdana devnet SOL | 5 | Hazırlık | 25 Kas 16:00 | Supabase (Frankfurt) + Vercel + ElevenLabs (sponsor hesabı) hazır; cüzdan SOL kaldı |
 | [x] | Seeker'da Seed Vault Wallet kurulu mu, devnet'e geçiyor mu kontrol et | 2 | MVP | 25 Kas 14:00 | Seeker yok; emülatör + Phantom ile devnet bağlantısı teyit edildi |
 | [x] | MWA dokümanı: signAndSendTransactions üçüncü parti uygulamada çalışıyor mu | 2 | MVP | 25 Kas 14:00 | Pratikte kanıtlandı (Phantom in-app imza) |
 | [x] | **İLK İŞ:** Seeker'dan MWA ile devnet'e hash içeren Memo işlemi gönder (Memo yedeği de bu) | 2 | MVP | 25 Kas 18:00 | ✅ In-app Phantom imzası → devnet finalized (tx 246bvDWt…F4iYn) |
@@ -25,8 +25,8 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [x] | Programı devnet'e deploy et, program ID + IDL paylaş | 3 | MVP | 25 Kas 23:00 | ✅ `2CyjSQFX…FZeeYJ` devnet'te; IDL + env'ler commit'li |
 | [~] | Doğrulama sayfası iskeleti (Next.js, tarayıcıda hash, sahte veriyle sonuç ekranı) | 4 | MVP | 25 Kas 22:00 | Next.js + Vercel canlı; hash/sonuç ekranı kaldı |
 | [ ] | Hash çapraz testi: aynı m4a telefonda, tarayıcıda ve `shasum -a 256` ile aynı hash | 4 | MVP | 25 Kas 23:00 | Kayıt ekranı (1) + tarayıcıda hash (4); 1 ile birlikte |
-| [ ] | Supabase: recordings tablosu + private storage bucket + RLS | 5 | Ekstra | 25 Kas 22:00 | |
-| [ ] | ElevenLabs Scribe denemesi (Türkçe kayıt) | 5 | Ekstra | 25 Kas 22:00 | |
+| [x] | Supabase: recordings tablosu + private storage bucket + RLS | 5 | Ekstra | 25 Kas 22:00 | ✅ Canlıda; URL + public key `.env.example`'da |
+| [x] | ElevenLabs Scribe denemesi (Türkçe kayıt) | 5 | Ekstra | 25 Kas 22:00 | ✅ Türkçe çalışıyor; dil kodu `tur` → `tr` |
 | [x] | **GÜN SONU HEDEFİ:** Seeker'dan devnet'e imzalı işlem gitti, Explorer'da görünüyor | Herkes | Hedef | 25 Kas 23:59 | ✅ In-app Phantom imzası devnet'te finalized (Memo `witness:v1:0000…`) |
 
 ## Hazırlık 2 (26 Kas, Perşembe)
@@ -38,7 +38,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [ ] | SPL Memo yedek yolu: uygulama + web (`?tx=`) hazır | 3 | MVP | 26 Kas 13:00 | Program öğlene kadar deploy değilse Memo ile devam |
 | [ ] | Gerçek PDA ile doğrulama: dosya yükle → ✅/❌, zaman, cüzdan | 4 | MVP | 26 Kas 18:00 | Program ID + IDL (3) |
 | [ ] | Doğrulama sayfasını Vercel'e deploy et | 4 | MVP | 26 Kas 20:00 | |
-| [ ] | Edge Function'lar: register (zinciri kontrol eder) + transcribe | 5 | Ekstra | 26 Kas 22:00 | |
+| [x] | Edge Function'lar: register (zinciri kontrol eder) + transcribe | 5 | Ekstra | 26 Kas 22:00 | ✅ Canlıda (#2, #3); kullanım `supabase/README.md` |
 | [ ] | **GÜN SONU HEDEFİ:** MVP uçtan uca (kaydet → mühürle → doğrula → kes → ❌) | Herkes | Hedef | 26 Kas 23:00 | Çalışmıyorsa 27 Kas'ta ekstra yok, sadece MVP |
 
 ## 1. gün (27 Kas, Cuma)
@@ -47,7 +47,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | --- | --- | --- | --- | --- | --- |
 | [ ] | Kayıt bilgisini Supabase'e gönder (register çağrısı) | 2 | Ekstra | 27 Kas 15:00 | register Edge Function (5) |
 | [ ] | Seeker Genesis Token rozeti | 2 | Ekstra | 27 Kas 18:00 | Genesis Token mint adresi teyidi |
-| [ ] | Transkripti uygulamaya bağla (asenkron, mühürlemeyi bekletmez) | 5 | Ekstra | 27 Kas 20:00 | |
+| [ ] | Transkripti uygulamaya bağla (asenkron, mühürlemeyi bekletmez) | 5 | Ekstra | 27 Kas 20:00 | Backend hazır (`transcribe` canlı); uygulama tarafı 1/2 ile |
 | [ ] | Kayıt listesi + transkript görünümü | 1 | Ekstra | 27 Kas 20:00 | |
 | [ ] | Paylaşım linki sayfası `/v/<hash>` | 4 | Ekstra | 27 Kas 20:00 | |
 | [ ] | Web'e PDA / Memo okumada destek, boşta kalan yere yardım | 3 | Ekstra | 27 Kas 20:00 | |
@@ -56,7 +56,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 
 | Durum | Görev | Rol | Öncelik | Bitiş | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
-| [ ] | upload-url Edge Function | 5 | Ekstra | 28 Kas 14:00 | |
+| [x] | upload-url Edge Function | 5 | Ekstra | 28 Kas 14:00 | ✅ Canlıda (#4), 26 Kas'ta erken bitti |
 | [ ] | Paylaşımda AES-256-GCM şifreleme + upload-url ile yükleme | 2 | Ekstra | 28 Kas 18:00 | upload-url Edge Function (5) |
 | [ ] | Şifreli dosyayı tarayıcıda çözme (`#k=`) + transkript gösterimi | 4 | Ekstra | 28 Kas 20:00 | |
 | [ ] | Kayıt detayı ekranı + UI cilası | 1 | Ekstra | 28 Kas 20:00 | |
