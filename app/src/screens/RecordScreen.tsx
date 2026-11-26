@@ -4,21 +4,12 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppHeader } from '@/components/app-header'
 import { C, MONO } from '@/constants/theme'
+import { TabBar, formatDuration } from '@/src/components/witness-ui'
 
 // UI only. Recording, playback, permissions and file handling live in the audio module
 // and are wired in through props.
 
 const METER_BARS = 24
-
-
-function formatDuration(durationMillis: number): string {
-  const totalTenths = Math.floor(Math.max(0, durationMillis) / 100)
-  const tenths = totalTenths % 10
-  const totalSeconds = Math.floor(totalTenths / 10)
-  const seconds = totalSeconds % 60
-  const minutes = Math.floor(totalSeconds / 60)
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`
-}
 
 export type RecordStatus = 'idle' | 'recording' | 'captured' | 'permission-denied'
 
@@ -274,21 +265,7 @@ export function RecordScreen({
           </>
         )}
 
-        {/* Tab bar */}
-        <View style={styles.tabBar}>
-          <View style={[styles.tab, styles.tabActive]}>
-            <MaterialCommunityIcons name="microphone-outline" size={20} color={C.text} />
-            <Text style={[styles.tabText, styles.tabTextActive]}>Record</Text>
-          </View>
-          <Pressable
-            disabled={isRecording}
-            onPress={onOpenRecordings}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons name="folder-star-outline" size={20} color={C.muted} />
-            <Text style={styles.tabText}>My Recordings</Text>
-          </Pressable>
-        </View>
+        <TabBar active="record" onRecordings={onOpenRecordings} disabled={isRecording} />
       </View>
     </SafeAreaView>
   )
@@ -552,33 +529,6 @@ const styles = StyleSheet.create({
   },
   sealButton: {
     flex: 2,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: C.surface,
-    borderRadius: 28,
-    padding: 6,
-    gap: 6,
-  },
-  tab: {
-    flex: 1,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  tabActive: {
-    backgroundColor: C.surfaceRaised,
-  },
-  tabText: {
-    color: C.muted,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: C.text,
   },
   disabled: {
     opacity: 0.5,
