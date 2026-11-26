@@ -132,6 +132,8 @@ const encrypted = await (await fetch(data.signedUrl)).arrayBuffer();
 
 Not: `storage_path`, yükleme izni verildiği anda yazılır. Yükleme yarıda kaldıysa dosya bulunamaz; sayfa bunu "dosya henüz yüklenmemiş" olarak göstermeli.
 
+**Bilinen sınır (hackathon için kabul edildi):** `upload-url` isteyenin kaydın sahibi olduğunu kontrol etmez. Hash'ler zincirde herkese açık olduğundan biri, sahibinden önce başkasının kaydı için izin alıp çöp dosya yükleyebilir; sahibi sonra `409 already_uploaded` alır ve paylaşamaz. Kimse kandırılamaz: doğrulama sayfası o dosya için ❌ gösterir. Kalıcı çözüm: istekte cüzdanın `witness-upload:<hash>` mesajına attığı imza (MWA `signMessages`) ve fonksiyonda ed25519 doğrulaması; uygulamada ek bir onay ekranı demek, bu yüzden şimdilik yapılmadı.
+
 ## Görevler
 
 | Tarih | Görev |
