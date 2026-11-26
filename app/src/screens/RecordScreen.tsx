@@ -1,36 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useState } from 'react'
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { AppHeader, C, MONO, TabBar, formatDuration } from '@/src/components/witness-ui'
 
 // UI only. Recording, playback, permissions and file handling live in the audio module
 // and are wired in through props.
 
 const METER_BARS = 24
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' })
-
-const C = {
-  bg: '#0B0F17',
-  surface: '#121926',
-  surfaceRaised: '#182234',
-  border: '#1E293B',
-  text: '#F8FAFC',
-  textSoft: '#CBD5E1',
-  muted: '#94A3B8',
-  emerald: '#34D399',
-  sealGreen: '#52B788',
-  onEmerald: '#0B1F14',
-  red: '#E5534B',
-}
-
-function formatDuration(durationMillis: number): string {
-  const totalTenths = Math.floor(Math.max(0, durationMillis) / 100)
-  const tenths = totalTenths % 10
-  const totalSeconds = Math.floor(totalTenths / 10)
-  const seconds = totalSeconds % 60
-  const minutes = Math.floor(totalSeconds / 60)
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`
-}
 
 export type RecordStatus = 'idle' | 'recording' | 'captured' | 'permission-denied'
 
@@ -122,20 +99,7 @@ export function RecordScreen({
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandBadge}>
-              <MaterialCommunityIcons name="shield-check-outline" size={20} color={C.emerald} />
-            </View>
-            <Text style={styles.brandTitle}>Witness</Text>
-          </View>
-          <View style={styles.walletPill}>
-            <View style={styles.emeraldDot} />
-            <Text style={styles.walletText}>{walletLabel}</Text>
-          </View>
-        </View>
-        <View style={styles.divider} />
+        <AppHeader walletLabel={walletLabel} />
 
         {isRecording ? (
           /* Live recording status */
@@ -299,21 +263,7 @@ export function RecordScreen({
           </>
         )}
 
-        {/* Tab bar */}
-        <View style={styles.tabBar}>
-          <View style={[styles.tab, styles.tabActive]}>
-            <MaterialCommunityIcons name="microphone-outline" size={20} color={C.text} />
-            <Text style={[styles.tabText, styles.tabTextActive]}>Record</Text>
-          </View>
-          <Pressable
-            disabled={isRecording}
-            onPress={onOpenRecordings}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons name="folder-star-outline" size={20} color={C.muted} />
-            <Text style={styles.tabText}>My Recordings</Text>
-          </Pressable>
-        </View>
+        <TabBar active="record" onRecordings={onOpenRecordings} disabled={isRecording} />
       </View>
     </SafeAreaView>
   )
@@ -332,56 +282,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     gap: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  brandBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    color: C.text,
-    fontSize: 22,
-    fontWeight: '600',
-  },
-  walletPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.surface,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  emeraldDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.emerald,
-  },
-  walletText: {
-    color: C.textSoft,
-    fontSize: 13,
-    fontFamily: MONO,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: C.border,
-    marginTop: -4,
   },
   card: {
     backgroundColor: C.surface,
@@ -627,33 +527,6 @@ const styles = StyleSheet.create({
   },
   sealButton: {
     flex: 2,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: C.surface,
-    borderRadius: 28,
-    padding: 6,
-    gap: 6,
-  },
-  tab: {
-    flex: 1,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  tabActive: {
-    backgroundColor: C.surfaceRaised,
-  },
-  tabText: {
-    color: C.muted,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: C.text,
   },
   disabled: {
     opacity: 0.5,
