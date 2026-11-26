@@ -2,7 +2,8 @@
 // IDL'dan encode eder, PDA'yı türetir, Recording hesabını okur.
 // Program ID + IDL: program devnet'e deploy edildi (docs → deploy).
 import * as anchor from '@coral-xyz/anchor'
-import { Connection, PublicKey, SystemProgram } from '@solana/web3.js'
+import { Connection, PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js'
+import { Buffer } from 'buffer'
 import idl from '@/idl/witness.json'
 import type { Witness } from '@/idl/witness'
 
@@ -42,7 +43,7 @@ export async function buildRegisterRecordingIx(
 ) {
   const program = readonlyProgram(connection, authority)
   const pda = recordingPda(args.audioHash)
-  const ix = await program.methods
+  const rawIx = await program.methods
     .registerRecording(
       Array.from(args.audioHash),
       new anchor.BN(args.recordedAt),
@@ -51,11 +52,41 @@ export async function buildRegisterRecordingIx(
     )
     .accountsPartial({ recording: pda, authority, systemProgram: SystemProgram.programId })
     .instruction()
+
+  // Anchor'ın ürettiği instruction'ı uygulamanın @solana/web3.js tipleriyle yeniden
+  // inşa et (temiz PublicKey + Buffer). Böylece compileToLegacyMessage Hermes'te
+  // tutarlı çalışır.
+  const ix = new TransactionInstruction({
+    programId: new PublicKey(rawIx.programId.toBytes()),
+    keys: rawIx.keys.map((k) => ({
+      pubkey: new PublicKey(k.pubkey.toBytes()),
+      isSigner: k.isSigner,
+      isWritable: k.isWritable,
+    })),
+    data: Buffer.from(rawIx.data),
+  })
   return { ix, pda }
 }
 
-/** Recording PDA'sını okur ve çözer; hesap yoksa null. */
-export async function fetchRecording(connection: Connection, pda: PublicKey) {
-  const program = readonlyProgram(connection, pda)
-  return program.account.recording.fetchNullable(pda)
+export interface RecordingAccount {
+  authority: PublicKey
+  audioHash: number[]
+  recordedAt: anchor.BN
+  anchoredAt: anchor.BN
+  durationMs: number
+  locationCommitment: number[] | null
+  bump: number
+}
+
+/** Recording PDA'sını okur ve çözer; hesap yoksa null.
+ *  program.account.* namespace'i yerine doğrudan coder kullanıyoruz (RN/Hermes'te
+ *  namespace erişimi tutarsız olabiliyor). */
+export async function fetchRecording(
+  connection: Connection,
+  pda: PublicKey,
+): Promise<RecordingAccount | null> {
+  const info = await connection.getAccountInfo(pda)
+  if (!info) return null
+  const coder = new anchor.BorshAccountsCoder(idl as Witness)
+  return coder.decode('Recording', info.data) as RecordingAccount
 }

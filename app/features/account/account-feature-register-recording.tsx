@@ -20,13 +20,17 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
   return (
     <AppActionButton
       onPress={async () => {
+        // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de);
+        // web3 payerKey gerçek PublicKey ister.
+        const payer = address instanceof PublicKey ? address : new PublicKey(address as unknown as string)
+
         const {
           context: { slot: minContextSlot },
           value: latestBlockhash,
         } = await connection.getLatestBlockhashAndContext()
 
         const audioHash = demoHash()
-        const { ix, pda } = await buildRegisterRecordingIx(connection, address, {
+        const { ix, pda } = await buildRegisterRecordingIx(connection, payer, {
           audioHash,
           recordedAt: Math.floor(Date.now() / 1000),
           durationMs: 12_345,
@@ -34,7 +38,7 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
         })
 
         const message = new TransactionMessage({
-          payerKey: address,
+          payerKey: payer,
           recentBlockhash: latestBlockhash.blockhash,
           instructions: [ix],
         }).compileToLegacyMessage()
@@ -42,9 +46,16 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
         const signature = await signAndSendTransactions(new VersionedTransaction(message), minContextSlot)
         await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed')
 
-        const rec = await fetchRecording(connection, pda)
+        // PDA'yı okumak best-effort: imza başarılıysa akış başarılıdır, okuma
+        // hatası başarıyı bozmaz.
+        let anchoredAt: string | undefined
+        try {
+          const rec = await fetchRecording(connection, pda)
+          anchoredAt = rec?.anchoredAt.toString()
+        } catch {}
+
         return {
-          description: `PDA ${ellipsify(pda.toString(), 6)} açıldı · anchored_at ${rec?.anchoredAt.toString()} · sig ${signature}`,
+          description: `PDA ${ellipsify(pda.toString(), 6)} açıldı${anchoredAt ? ` · anchored_at ${anchoredAt}` : ''} · sig ${signature}`,
           status: 'success',
           title: 'Register recording',
         } as const
