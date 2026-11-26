@@ -23,8 +23,8 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | Anchor testleri (4 senaryo) | `program/tests/witness.ts` localnet'te geçti (geçerli kayıt / çift hash / duration 0 / location) |
 | ✅ | SHA-256 hash util | `app/utils/witness-hash.ts` (expo-crypto), `shasum -a 256` ile doğrulandı |
 | ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_YEDEGI_SOZLESMESI.md` (Rol 4 bunu uygular) |
-| ⛔ | Anchor devnet deploy | **Funding bekliyor:** deployer `89y28j…FNRm`'ye ~4 devnet SOL lazım; faucet 8 saatte 2 istek limiti. Deploy sonrası `*_WITNESS_PROGRAM_ID` env'leri dolacak |
-| ⬜ | `register_recording` çağrısı (app) | Program deploy'unu bekler (deploy açılınca ilk iş) |
+| ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
+| ⬜ | `register_recording` çağrısı (app) | Sıradaki iş: IDL'dan encode → MWA imzala → PDA'yı oku |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 

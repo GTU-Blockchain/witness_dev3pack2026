@@ -22,7 +22,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [ ] | Kayıt ekranı: kaydet / durdur / dinle, m4a (AAC, mono, 44.1 kHz) çıktısı | 1 | MVP | 25 Kas 22:00 | |
 | [~] | Dosyanın SHA-256 hash'ini telefonda hesapla | 2 | MVP | 25 Kas 20:00 | `app/utils/witness-hash.ts` (expo-crypto), shasum ile doğrulandı; ekrana bağlama + rebuild kaldı |
 | [x] | Anchor programı: Recording hesabı + register_recording + testler | 3 | MVP | 25 Kas 20:00 | Program yazıldı + 4 test localnet'te geçti |
-| [ ] | Programı devnet'e deploy et, program ID + IDL paylaş | 3 | MVP | 25 Kas 23:00 | ⛔ Funding bekliyor: deployer `89y28j…FNRm`'ye ~4 devnet SOL (faucet 8s/2 limiti) |
+| [x] | Programı devnet'e deploy et, program ID + IDL paylaş | 3 | MVP | 25 Kas 23:00 | ✅ `2CyjSQFX…FZeeYJ` devnet'te; IDL + env'ler commit'li |
 | [~] | Doğrulama sayfası iskeleti (Next.js, tarayıcıda hash, sahte veriyle sonuç ekranı) | 4 | MVP | 25 Kas 22:00 | Next.js + Vercel canlı; hash/sonuç ekranı kaldı |
 | [ ] | Hash çapraz testi: aynı m4a telefonda, tarayıcıda ve `shasum -a 256` ile aynı hash | 4 | MVP | 25 Kas 23:00 | Kayıt ekranı (1) + tarayıcıda hash (4); 1 ile birlikte |
 | [ ] | Supabase: recordings tablosu + private storage bucket + RLS | 5 | Ekstra | 25 Kas 22:00 | |
