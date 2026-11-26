@@ -34,7 +34,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | Durum | Görev | Rol | Öncelik | Bitiş | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
 | [ ] | Cüzdan bağla + Mühürleme durumu ekranları | 1 | MVP | 26 Kas 18:00 | |
-| [ ] | IDL'dan register_recording işlemi kur, imzalat, onay sonrası PDA'yı oku | 2 | MVP | 26 Kas 15:00 | Program ID + IDL (3) |
+| [~] | IDL'dan register_recording işlemi kur, imzalat, onay sonrası PDA'yı oku | 2 | MVP | 26 Kas 15:00 | Kod + devnet kanıtı ✓ (script); in-app MWA/Phantom testi + gerçek dosya hash'i kaldı |
 | [ ] | SPL Memo yedek yolu: uygulama + web (`?tx=`) hazır | 3 | MVP | 26 Kas 13:00 | Program öğlene kadar deploy değilse Memo ile devam |
 | [ ] | Gerçek PDA ile doğrulama: dosya yükle → ✅/❌, zaman, cüzdan | 4 | MVP | 26 Kas 18:00 | Program ID + IDL (3) |
 | [ ] | Doğrulama sayfasını Vercel'e deploy et | 4 | MVP | 26 Kas 20:00 | |
