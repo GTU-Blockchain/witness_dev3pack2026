@@ -2,7 +2,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useState } from 'react'
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AppHeader, C, MONO, TabBar, formatDuration } from '@/src/components/witness-ui'
+import { AppHeader } from '@/components/app-header'
+import { C, MONO } from '@/constants/theme'
+import { TabBar, formatDuration } from '@/src/components/witness-ui'
 
 // UI only. Recording, playback, permissions and file handling live in the audio module
 // and are wired in through props.

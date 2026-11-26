@@ -67,13 +67,17 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["audio/*", "image/*"],
+          "androidIntentFilters": [
+            "audio/*",
+            "image/*"
+          ],
           "androidMainActivityAttributes": {
             "android:launchMode": "singleTask"
           },
           "disableIOS": true
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "reactCompiler": true,

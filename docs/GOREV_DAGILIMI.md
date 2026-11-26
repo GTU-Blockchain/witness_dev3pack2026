@@ -10,9 +10,9 @@ Türkiye'de local track olduğu teyit edildi.
 
 **Rol 6 (Katman 1 — Paylaş-menüsü mühürleme UI)** ayrı bir kişi değil; Rol 2+3'ü üstlenen kişinin, **ana UI geldikten sonra** yapacağı ek bir iş hattı. Fonksiyonel iskeleti bitti (devnet'te kanıtlı), kalan gerçek UI işi aşağıda Rol 6 planında.
 
-## İlerleme durumu (2026-11-25)
+## İlerleme durumu (2026-11-26)
 
-Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı.
+Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı. 26 Kas'ta ilk gerçek UI ekranları (Kayıt, Cüzdan bağla) ve Supabase'in her dosya türü desteği main'e merge edildi.
 
 | Durum | İş | Not |
 | --- | --- | --- |
@@ -29,8 +29,11 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
 | ✅ | **Katman 1 — Paylaş-menüsü mühürleme (fonksiyonel iskelet)** | `feature/katman-1-share-intent` branch'i; galeriden gerçek foto → Paylaş → Witness → gerçek SHA-256 → register → devnet'te finalized (tx `3GxqbH92…CSHN`, hash `a2aac7fa…fab24`). UI şu an dev-scaffold kartı; gerçek UI **Rol 6** (bkz. aşağı) |
 | ✅ | **Rol 4 — Web doğrulama (MVP) merge + deploy + canlı doğrulama** | `feat/web-verify` main'e merge edildi; `web-pi-cyan-30.vercel.app` otomatik deploy ile canlı. Uçtan uca kanıt: Katman 1 ile mühürlenen foto siteye bırakıldı → tarayıcıda hash → zincir → **✅ "birebir aynı"** (hash `a2aac7fa…`, anchored_at + cüzdan + tx gösteriliyor). Kalan: `/v/<hash>`, `?tx=` Memo, `#k=`+transkript, pitch görselleri |
+| ✅ | **Rol 5 — Supabase her dosya türü desteği (PR #6)** | `mime_type` kolonu + `transcript_status='skipped'`. `register` opsiyonel `mime_type` alıyor, ses/video değilse transkript atlanıyor; `transcribe` ses/video dışını reddediyor (dosyanın ilk baytlarından magic-number sniff). Katman 1 artık foto/video/belge de mühürleyebilir; doğrulama sayfası çözülen dosyayı türe göre gösterir |
+| ✅ | **Rol 1 / Kişi B — Cüzdan bağla ekranı (PR #7 + #8)** | `WalletScreen`: bağla butonu, kısa adres, devnet etiketi, SOL bakiyesi, düşük bakiyede faucet uyarısı. `/wallet` route'u + ana ekran butonuyla navigasyona bağlandı (#8). Fix: `account.address` runtime'da string gelebildiği için `getBalance`'tan önce `PublicKey`'e normalize edildi. Saf `WalletView` + bağlı-parça ayrımı; mock'lanabilir |
+| ✅ | **Rol 1 / Kişi A — Kayıt ekranı UI (PR #9)** | `RecordScreen` 4 durum (idle / recording / captured / permission-denied), props + callback'lerle sürülen **saf UI** (`@expo/vector-icons`, `eas.json` eklendi). Kalan: gerçek ses kaydı/m4a çıktısı modülünü props'a bağlamak ve navigasyona (route) eklemek. Şu an `app/src/screens/` altında — ileride `features/` konvansiyonuna taşınabilir |
 
-Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
+Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A (Kayıt ekranı UI) ve Kişi B (Cüzdan bağla ekranı) ilk ekranlarını merge etti. İkisi de şimdilik saf UI: Kayıt ekranına ses modülü, iki ekrana da gerçek akış/navigasyon bağlama kaldı (çakışma notu için "Açık sorular").
 
 ## Ekip ataması
 
