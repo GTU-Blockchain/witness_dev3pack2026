@@ -20,16 +20,35 @@ const RECORDING_OPTIONS: RecordingOptions = {
   sampleRate: 44100,
   numberOfChannels: 1,
   bitRate: 128000,
-  isMeteringEnabled: true,
   android: { outputFormat: 'mpeg4', audioEncoder: 'aac' },
   ios: { outputFormat: IOSOutputFormat.MPEG4AAC, audioQuality: AudioQuality.MAX },
   web: { mimeType: 'audio/mp4', bitsPerSecond: 128000 },
 }
 
-// Metering dB cinsinden gelir (~-60 sessiz, 0 en yüksek); ekran 0..1 bekliyor.
-function meteringToLevel(db: number | undefined): number {
-  if (db === undefined) return 0
-  return Math.min(1, Math.max(0, (db + 60) / 60))
+// Kayıt sırasındaki dalga göstergesi için SÜS amaçlı seviye (0..1). Gerçek sese bağlı değil:
+// birkaç farklı hızda dalga + tik başına değişen "gürültü" ile konuşmaya benzer, sürekli
+// değişen bir desen üretir. Saf fonksiyon (aynı zamana aynı değer), render'da güvenle çağrılır.
+// 0..1 arası sözde rastgele sayı; aynı girdiye hep aynı sonucu verir.
+function pseudoRandom(n: number): number {
+  return Math.abs(Math.sin(n * 12.9898 + 78.233) * 43758.5453) % 1
+}
+
+function decorativeLevel(millis: number): number {
+  const t = millis / 1000
+  const tick = Math.floor(millis / 100)
+
+  // Konuşma gibi ~1.2-2 sn'lik "cümleler": her birinin kendi yüksekliği var,
+  // bazıları fısıltı gibi alçak, bazıları bağırır gibi yüksek; arada kısa sessizlikler.
+  const phrase = Math.floor(t / 1.5)
+  const phraseLoudness = 0.25 + 0.75 * pseudoRandom(phrase)
+  const isPause = pseudoRandom(phrase + 1000) < 0.18
+
+  const noise = pseudoRandom(tick) // hece başına titreşim
+  if (isPause) return 0.05 + 0.08 * noise
+
+  const syllable = 0.7 + 0.3 * Math.sin(t * 7.3 + phrase) // cümle içindeki hızlı inip kalkma
+  const raw = phraseLoudness * syllable * (0.4 + 0.9 * noise)
+  return Math.min(1, Math.max(0.06, Math.pow(raw, 0.7))) // üs < 1: tepeler daha belirgin
 }
 
 /** Kayıt ekranının ses mantığı: izin, kaydet / durdur, dinle, sil. */
@@ -103,17 +122,29 @@ export function useRecorder() {
     setStatus('idle')
   }
 
+  /** Kaydı mühürlemeye devreder: dosyayı SİLMEDEN ekranı başa döndürür. */
+  function handOff(): { uri: string; durationMillis: number } | null {
+    if (!uri) return null
+    player.pause()
+    const result = { uri, durationMillis: capturedMillis }
+    setUri(null)
+    setCapturedMillis(0)
+    setStatus('idle')
+    return result
+  }
+
   return {
     status,
     busy,
     uri,
     durationMillis: status === 'recording' ? recorderState.durationMillis : capturedMillis,
-    level: status === 'recording' ? meteringToLevel(recorderState.metering) : 0,
+    level: status === 'recording' ? decorativeLevel(recorderState.durationMillis) : 0,
     isPlaying: playerStatus.playing,
     playbackMillis: Math.round(playerStatus.currentTime * 1000),
     start,
     stop,
     togglePlayback,
     discard,
+    handOff,
   }
 }
