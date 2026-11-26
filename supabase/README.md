@@ -37,8 +37,9 @@ supabase functions deploy register transcribe upload-url --no-verify-jwt
 | `migrations/20261125000000_recordings.sql` | `recordings` tablosu, RLS (herkes okur, anon yazamaz), private `recordings` bucket |
 | `migrations/20261125154643_recordings_transcript_status_default.sql` | `transcript_status` varsayılanı `pending` |
 | `migrations/20261126102917_recordings_bucket_read_and_limits.sql` | Bucket'a 25 MB sınırı; public key ile okuma (dosyalar şifreli) |
-| `functions/register` | Girdi: `audio_hash`, `tx_signature`, `wallet`. İşlemi devnet'ten okur, PDA'daki hash/cüzdan eşleşirse satır ekler |
-| `functions/transcribe` | Girdi: `audio_hash` + ses. ElevenLabs Scribe → `transcript`. API anahtarı sadece burada |
+| `migrations/20261126142121_recordings_any_file_type.sql` | Her dosya türü: `mime_type` kolonu, `transcript_status = 'skipped'` |
+| `functions/register` | Girdi: `audio_hash`, `tx_signature`, `wallet`, `mime_type?`. İşlemi devnet'ten okur, PDA'daki hash/cüzdan eşleşirse satır ekler |
+| `functions/transcribe` | Girdi: `audio_hash` + ses/video (foto, belge reddedilir). ElevenLabs Scribe → `transcript`. API anahtarı sadece burada |
 | `functions/upload-url` | Girdi: `audio_hash`. Kayıt `register` edildiyse şifreli dosya için tek seferlik yükleme URL'si |
 
 ## `register` API (uygulama için, rol 2)
@@ -51,17 +52,20 @@ const { data, error } = await supabase.functions.invoke("register", {
     audio_hash: "04996e6d…87c7",   // 64 karakter küçük harf hex
     tx_signature: "2BEZqQvV…9WU8",  // signAndSendTransactions'ın döndürdüğü imza (base58)
     wallet: "89y28jHh…FNRm",        // imzalayan cüzdan (base58)
+    mime_type: file.mimeType,       // isteğe bağlı ama gönderin: "audio/mp4", "image/jpeg", "video/mp4"…
   },
 });
 ```
 
-**Başarılı cevap:** `201 { status: "registered", recording }` ya da aynı kayıt tekrar gönderildiyse `200 { status: "already_registered", recording }`. `recording` tablodaki satırdır (`transcript_status: "pending"` ile başlar).
+**Başarılı cevap:** `201 { status: "registered", recording }` ya da aynı kayıt tekrar gönderildiyse `200 { status: "already_registered", recording }`. `recording` tablodaki satırdır. `transcript_status` ses/video için `"pending"`, diğer dosyalar (foto, belge) için `"skipped"` ile başlar.
+
+**Her dosya türü:** Witness paylaş menüsünden foto, video, belge de mühürleyebilir. `mime_type`'ı gönderin; doğrulama sayfası çözülen dosyayı buna göre gösterir (resim / ses oynatıcı / video / indir) ve transkript beklemez. `mime_type` gönderilmezse ses varsayılır (eski davranış). İlk çağrı `mime_type`'sız gittiyse aynı çağrıyı `mime_type` ile tekrarlamak satırı tamamlar.
 
 **Hatalar:** gövde `{ error, message }`
 
 | HTTP | `error` | Anlamı | Uygulama ne yapmalı |
 | --- | --- | --- | --- |
-| 400 | `bad_json`, `bad_audio_hash`, `bad_tx_signature`, `bad_wallet` | Girdi biçimi yanlış | Hata: kodu düzelt |
+| 400 | `bad_json`, `bad_audio_hash`, `bad_tx_signature`, `bad_wallet`, `bad_mime_type` | Girdi biçimi yanlış | Hata: kodu düzelt |
 | 404 | `tx_not_found` | İşlem devnet'te yok ya da henüz görünmüyor (3 kez denenir, ~6 sn) | Birkaç saniye sonra tekrar dene |
 | 404 | `recording_not_found` | Bu hash için zincirde Recording hesabı yok | Mühürleme gerçekten başarılı mı kontrol et |
 | 403 | `wallet_not_signer`, `hash_mismatch`, `account_mismatch`, `recording_mismatch` | Gönderilen değerler zincirdekiyle uyuşmuyor | Hata: yanlış hash/cüzdan/imza gönderiliyor |
@@ -74,7 +78,7 @@ const { data, error } = await supabase.functions.invoke("register", {
 
 ## `transcribe` API (uygulama için, rol 2)
 
-`register` başarılı olduktan sonra **arka planda** çağrılır; Mühürlendi ekranı transkripti beklemez. Gönderilen dosya **mühürlenen dosyanın aynısı** olmalı (şifresiz m4a): fonksiyon dosyanın SHA-256'sını `audio_hash` ile karşılaştırır, register edilmemiş ya da farklı bir dosya için ElevenLabs'e hiç gitmez. Transkript zaten yapıldıysa tekrar ücretlendirmez, kayıtlı sonucu döner.
+**Sadece ses ve video için** (`mime_type` `audio/*` ya da `video/*`) `register` başarılı olduktan sonra **arka planda** çağrılır; Mühürlendi ekranı transkripti beklemez. Gönderilen dosya **mühürlenen dosyanın aynısı** olmalı (şifresiz m4a): fonksiyon dosyanın SHA-256'sını `audio_hash` ile karşılaştırır, register edilmemiş ya da farklı bir dosya için ElevenLabs'e hiç gitmez. Transkript zaten yapıldıysa tekrar ücretlendirmez, kayıtlı sonucu döner.
 
 ```ts
 const form = new FormData();
@@ -85,7 +89,7 @@ const { data, error } = await supabase.functions.invoke("transcribe", { body: fo
 // data: { status: "done" | "already_done", transcript, transcript_lang: "tr" | "en" | null }
 ```
 
-Sonuç ayrıca `recordings` tablosuna yazılır (`transcript`, `transcript_lang`, `transcript_status: "done"`); kayıt listesi ve doğrulama sayfası oradan okur. `transcript_status` değerleri değişmedi: `pending` → `done` ya da `failed`.
+Sonuç ayrıca `recordings` tablosuna yazılır (`transcript`, `transcript_lang`, `transcript_status: "done"`); kayıt listesi ve doğrulama sayfası oradan okur. `transcript_status`: `pending` → `done` ya da `failed`; ses/video olmayan dosyalarda `skipped` (arayüz transkript alanını hiç göstermemeli).
 
 | HTTP | `error` | Anlamı | Uygulama ne yapmalı |
 | --- | --- | --- | --- |
@@ -93,6 +97,7 @@ Sonuç ayrıca `recordings` tablosuna yazılır (`transcript`, `transcript_lang`
 | 400 | `hash_mismatch` | Gönderilen dosya bu kayıt değil | Hata: mühürlenen dosyanın aynısını gönder (yeniden kodlanmamış) |
 | 404 | `not_registered` | Önce `register` başarılı olmalı | `register`'dan sonra çağır |
 | 413 | `file_too_large` | 25 MB üstü | Demo için kısa kayıt |
+| 415 | `unsupported_type` | Ses/video değil (foto, belge…). Kayıttaki türe, gönderilen türe ve dosyanın ilk baytlarına bakılır; ElevenLabs'e gidilmez, satır `skipped` olur | Bu dosya türü için çağırmayın |
 | 502 | `transcription_failed` | ElevenLabs hata verdi; satır `failed` oldu | Daha sonra tekrar denenebilir |
 | 500 | `db_error`, `not_configured` | Sunucu tarafı sorun | Bildir |
 
@@ -129,6 +134,8 @@ const { data } = await supabase.storage.from("recordings").createSignedUrl(row.s
 const encrypted = await (await fetch(data.signedUrl)).arrayBuffer();
 // #k= anahtarıyla tarayıcıda çöz → SHA-256 → audio_hash ile ve zincirle karşılaştır
 ```
+
+Dosya türü: yol her türde `<audio_hash>.m4a.enc`; gerçek tür satırdaki `mime_type`'ta. Çözdükten sonra `new Blob([plain], { type: row.mime_type ?? "audio/mp4" })` ile göster: `image/*` → `<img>`, `audio/*` → `<audio>`, `video/*` → `<video>`, diğerleri → indir. Süreyi (`duration_ms`) sadece ses/videoda göster; fotoğraflarda `1`'dir.
 
 Not: `storage_path`, yükleme izni verildiği anda yazılır. Yükleme yarıda kaldıysa dosya bulunamaz; sayfa bunu "dosya henüz yüklenmemiş" olarak göstermeli.
 

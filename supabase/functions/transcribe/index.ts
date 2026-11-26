@@ -9,6 +9,7 @@
 //   1. Kayıt `register` edilmiş (recordings'te satır var)
 //   2. Gönderilen dosyanın SHA-256'sı = audio_hash (rastgele ses gönderilemez)
 //   3. Transkript daha önce yapılmamış
+//   4. Dosya ses ya da video (foto, belge vs. ElevenLabs'e hiç gönderilmez → 415, satır 'skipped')
 // Sonra ElevenLabs Scribe'a gönderir, dil kodunu tabloya uygun hale getirir (tur → tr, eng → en),
 // satırı günceller. Hata olursa transcript_status = 'failed' (uygulama tekrar deneyebilir).
 
@@ -20,6 +21,28 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024; // ~25 MB; demo kayıtları çok daha k
 const ELEVENLABS_TIMEOUT_MS = 60_000;
 
 const HEX64 = /^[0-9a-f]{64}$/;
+
+function isAudioOrVideo(mime: string): boolean {
+  return mime.startsWith("audio/") || mime.startsWith("video/");
+}
+
+// Uygulamanın gönderdiği türe güvenmeden, dosyanın ilk baytlarından bilinen ses-dışı türleri tanır.
+// (m4a/mp4 de "ftyp" ile başlar; o yüzden ftyp'te marka bakılır: heic/avif = resim.)
+function sniffNonAudio(b: Uint8Array): string | null {
+  const ascii = (from: number, to: number) => String.fromCharCode(...b.slice(from, to));
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b[0] === 0x89 && ascii(1, 4) === "PNG") return "image/png";
+  if (ascii(0, 4) === "GIF8") return "image/gif";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "image/webp";
+  if (ascii(0, 4) === "%PDF") return "application/pdf";
+  if (b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04) return "application/zip";
+  if (ascii(4, 8) === "ftyp") {
+    const brand = ascii(8, 12);
+    if (["heic", "heix", "hevc", "mif1", "msf1"].includes(brand)) return "image/heic";
+    if (brand === "avif" || brand === "avis") return "image/avif";
+  }
+  return null;
+}
 
 // ElevenLabs ISO 639-3 döner ("tur"); tablo sadece 'tr' / 'en' kabul ediyor (check constraint).
 const LANG_MAP: Record<string, string> = { tur: "tr", tr: "tr", eng: "en", en: "en" };
@@ -81,7 +104,7 @@ Deno.serve(async (req: Request) => {
   // --- 2. Kayıt register edilmiş mi, transkript zaten var mı? ---
   const { data: row, error: selectError } = await supabase
     .from("recordings")
-    .select("audio_hash, transcript, transcript_lang, transcript_status")
+    .select("audio_hash, transcript, transcript_lang, transcript_status, mime_type")
     .eq("audio_hash", audioHash)
     .maybeSingle();
   if (selectError) return fail(500, "db_error", selectError.message);
@@ -92,6 +115,17 @@ Deno.serve(async (req: Request) => {
       transcript: row.transcript,
       transcript_lang: row.transcript_lang,
     });
+  }
+
+  // --- 2b. Ses/video mu? Önce kayıttaki tür, yoksa gönderilen dosyanın türü, en son ilk baytlar ---
+  const declared = row.mime_type ?? (file.type ? file.type.split(";")[0].trim().toLowerCase() : "");
+  const declaredNonAudio = declared !== "" && declared !== "application/octet-stream" && !isAudioOrVideo(declared);
+  const sniffed = sniffNonAudio(new Uint8Array(bytes, 0, Math.min(16, bytes.byteLength)));
+  if (row.transcript_status === "skipped" || declaredNonAudio || sniffed) {
+    if (row.transcript_status !== "skipped") {
+      await supabase.from("recordings").update({ transcript_status: "skipped" }).eq("audio_hash", audioHash);
+    }
+    return fail(415, "unsupported_type", `Transkript sadece ses/video için yapılır (dosya: ${sniffed ?? (declared || "bilinmiyor")})`);
   }
 
   const markFailed = () =>

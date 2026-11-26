@@ -1,7 +1,8 @@
 // Edge Function: register  (sahibi: 5 Backend + kaptan)
 // Sözleşme: docs/TEKNIK_DOKUMAN.md → "Supabase" → Edge Function'lar
 //
-// Girdi:  POST { audio_hash, tx_signature, wallet }
+// Girdi:  POST { audio_hash, tx_signature, wallet, mime_type? }
+//         mime_type isteğe bağlı (örn. "audio/mp4", "image/jpeg"). Ses/video değilse transcript_status = 'skipped'.
 // Çıktı:  201 { status: "registered", recording }  ya da  200 { status: "already_registered", recording }
 //
 // Gelen hiçbir değere güvenmez. Satırı yazmadan önce zincirden şunları doğrular:
@@ -25,6 +26,12 @@ const REGISTER_IX_DISCRIMINATOR = [134, 1, 57, 133, 241, 98, 215, 15];
 const RECORDING_ACCOUNT_DISCRIMINATOR = [127, 40, 57, 149, 55, 75, 215, 111];
 
 const HEX64 = /^[0-9a-f]{64}$/;
+const MIME = /^[a-z0-9]+\/[a-z0-9][a-z0-9.+-]{0,99}$/; // tablodaki check ile aynı
+
+// Transkript sadece sesi olan dosyalarda yapılır (ElevenLabs videodaki sesi de yazıya döker).
+function isTranscribable(mime: string | null): boolean {
+  return mime === null || mime.startsWith("audio/") || mime.startsWith("video/");
+}
 const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 const CORS = {
@@ -138,6 +145,7 @@ Deno.serve(async (req: Request) => {
   const audioHash = String(body?.audio_hash ?? "").toLowerCase();
   const txSignature = String(body?.tx_signature ?? "");
   const walletInput = String(body?.wallet ?? "");
+  const mimeInput = body?.mime_type;
 
   if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash 64 karakter hex olmalı");
   if (base58ByteLength(txSignature) !== 64) {
@@ -149,6 +157,13 @@ Deno.serve(async (req: Request) => {
   } catch {
     return fail(400, "bad_wallet", "wallet geçerli bir Solana adresi değil");
   }
+  // Boş / gönderilmemiş = bilinmiyor (eski davranış). "image/jpeg; charset=..." gibi parametreler atılır.
+  let mimeType: string | null = null;
+  if (mimeInput !== undefined && mimeInput !== null && mimeInput !== "") {
+    mimeType = String(mimeInput).split(";")[0].trim().toLowerCase();
+    if (!MIME.test(mimeType)) return fail(400, "bad_mime_type", "mime_type \"tür/alt-tür\" biçiminde olmalı, örn. image/jpeg");
+  }
+  const transcriptStatus = isTranscribable(mimeType) ? "pending" : "skipped";
 
   const conn = new Connection(RPC_URL, "confirmed");
   const pda = PublicKey.findProgramAddressSync(
@@ -217,6 +232,21 @@ Deno.serve(async (req: Request) => {
     if (selectError) return fail(500, "db_error", selectError.message);
     if (existing) {
       if (existing.tx_signature === txSignature && existing.wallet === wallet.toBase58()) {
+        // Önceki çağrı mime_type'sız geldiyse (tekrar deneme), türü şimdi tamamla
+        if (existing.mime_type === null && mimeType !== null) {
+          const patch: Record<string, string> = { mime_type: mimeType };
+          if (existing.transcript_status === "pending" && transcriptStatus === "skipped") {
+            patch.transcript_status = "skipped";
+          }
+          const { data: updated, error: updateError } = await supabase
+            .from("recordings")
+            .update(patch)
+            .eq("audio_hash", audioHash)
+            .select()
+            .single();
+          if (updateError) return fail(500, "db_error", updateError.message);
+          return json(200, { status: "already_registered", recording: updated });
+        }
         return json(200, { status: "already_registered", recording: existing });
       }
       return fail(409, "conflict", "Bu hash farklı bir işlem ya da cüzdanla kayıtlı");
@@ -231,6 +261,8 @@ Deno.serve(async (req: Request) => {
         pda: pda.toBase58(),
         duration_ms: rec.durationMs,
         anchored_at: new Date(rec.anchoredAt * 1000).toISOString(),
+        mime_type: mimeType,
+        transcript_status: transcriptStatus,
       })
       .select()
       .single();
