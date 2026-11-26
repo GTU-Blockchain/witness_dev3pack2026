@@ -10,6 +10,7 @@ export default function RootLayout() {
       <AppProviders>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="wallet" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </AppProviders>
