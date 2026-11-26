@@ -11,6 +11,8 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="wallet" options={{ headerShown: false }} />
+          <Stack.Screen name="record" options={{ headerShown: false }} />
+          <Stack.Screen name="dev" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </AppProviders>

@@ -1,27 +1,15 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useState } from 'react'
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { AppHeader } from '@/components/app-header'
+import { C, MONO } from '@/constants/theme'
 
 // UI only. Recording, playback, permissions and file handling live in the audio module
 // and are wired in through props.
 
 const METER_BARS = 24
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' })
 
-const C = {
-  bg: '#0B0F17',
-  surface: '#121926',
-  surfaceRaised: '#182234',
-  border: '#1E293B',
-  text: '#F8FAFC',
-  textSoft: '#CBD5E1',
-  muted: '#94A3B8',
-  emerald: '#34D399',
-  sealGreen: '#52B788',
-  onEmerald: '#0B1F14',
-  red: '#E5534B',
-}
 
 function formatDuration(durationMillis: number): string {
   const totalTenths = Math.floor(Math.max(0, durationMillis) / 100)
@@ -122,20 +110,7 @@ export function RecordScreen({
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandBadge}>
-              <MaterialCommunityIcons name="shield-check-outline" size={20} color={C.emerald} />
-            </View>
-            <Text style={styles.brandTitle}>Witness</Text>
-          </View>
-          <View style={styles.walletPill}>
-            <View style={styles.emeraldDot} />
-            <Text style={styles.walletText}>{walletLabel}</Text>
-          </View>
-        </View>
-        <View style={styles.divider} />
+        <AppHeader walletLabel={walletLabel} />
 
         {isRecording ? (
           /* Live recording status */
@@ -332,56 +307,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     gap: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  brandBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    color: C.text,
-    fontSize: 22,
-    fontWeight: '600',
-  },
-  walletPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.surface,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  emeraldDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.emerald,
-  },
-  walletText: {
-    color: C.textSoft,
-    fontSize: 13,
-    fontFamily: MONO,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: C.border,
-    marginTop: -4,
   },
   card: {
     backgroundColor: C.surface,
