@@ -10,8 +10,7 @@ Doğrulama tamamen tarayıcıda: dosya sunucuya gitmez, sayfa doğrudan Solana R
 
 ```bash
 cd web
-npm i                       # mevcut bağımlılıklar
-npm i @solana/web3.js @coral-xyz/anchor
+npm i                       # bağımlılıklar package.json'da (anchor 0.31.1, web3.js 1.x, @noble/hashes 1.8.0)
 npm run dev
 ```
 
@@ -28,12 +27,31 @@ IDL gelene kadar sahte veriyle çalış; sonra `../program/target/idl/witness.js
 
 ## Doğrulama
 
-1. `crypto.subtle.digest("SHA-256", await file.arrayBuffer())` → küçük harf hex
+1. Dosyanın ham baytlarının SHA-256'sı → küçük harf hex (`lib/hash.ts` → `sha256HexOfFile`; büyük dosyalar için aşağıya bak)
 2. `PublicKey.findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`
 3. `getAccountInfo(pda)` → yok ❌ / var → Anchor coder ile `Recording` çöz ✅
 4. `/v/<hash>`'te dosya hash'i URL hash'inden farklıysa ❌ "Bu dosya o kayıt değil"
 
 Dipnot her zaman: "Bu sayfa içeriğin doğru olduğunu değil, sonradan değiştirilmediğini kanıtlar."
+
+Süre: Witness her dosya türünü mühürleyebildiği için fotoğraf gibi süresiz dosyalar zincire `duration_ms = 1` ile yazılır (program `> 0` istiyor). "Süre" satırı sadece ses/video dosyalarında gösterilir; tarayıcı türü bilmiyorsa 1 ms süresiz sayılır (`lib/format.ts` → `shouldShowDuration`).
+
+## Büyük dosyalar
+
+**Sorun:** İlk sürüm hash için `file.arrayBuffer()` kullanıyordu; bu, dosyanın tamamını tek seferde belleğe alır. Artık video da mühürlenebildiği için yüzlerce MB'lık bir dosyada (özellikle telefonda) tarayıcı sekmesi çökebilir. WebCrypto'nun (`crypto.subtle.digest`) parça parça hash'leme desteği yok.
+
+**Çözüm** (`lib/hash.ts`):
+
+| Dosya boyutu | Yöntem |
+| --- | --- |
+| ≤ 64 MB (`STREAM_THRESHOLD_BYTES`) | Eskisi gibi: tek seferde `crypto.subtle.digest` (tarayıcının yerel, en hızlı yolu) |
+| > 64 MB | Dosya `file.slice()` ile 8 MB'lık parçalar (`CHUNK_BYTES`) halinde okunur, her parça artımlı SHA-256'ya (`@noble/hashes` → `sha256.create().update()`) verilir. Bellekte aynı anda sadece bir parça durur |
+
+- **Sonuç birebir aynı SHA-256'dır.** Hash kuralı değişmez: dosyanın ham baytları, sırayla, hiç dönüştürülmeden hash'lenir. Telefonda ve `shasum -a 256` ile aynı hex çıkar.
+- Büyük dosyada ekranda ilerleme yüzdesi görünür ("Parmak izi hesaplanıyor… %42").
+- `@noble/hashes` **1.8.0**'a sabit: `@solana/web3.js` ve Anchor'un zaten kullandığı sürüm, ek paket indirilmez. Saf JS olduğu için WebCrypto'dan yavaştır; bu yüzden sadece eşiğin üstünde kullanılır.
+- Dalga formu (`components/WaveForm.tsx`) ses çözmek için dosyanın tamamını okur; bu yüzden 64 MB'ın üstündeki dosyalarda çizilmez. Doğrulama sonucunu etkilemez, ✅/❌ hash'ten gelir.
+- Dosya yine hiçbir yere gönderilmez; parçalar sadece tarayıcı belleğinde okunur.
 
 ## Görevler
 

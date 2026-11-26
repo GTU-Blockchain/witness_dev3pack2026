@@ -1,5 +1,5 @@
 'use client'
-// 4: Sürükle bırak alanı
+// 4: Sürükle bırak alanı. Dosya sadece tarayıcıda okunur; hiçbir yere yüklenmez.
 import { useRef, useState } from 'react'
 
 export function DropZone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {
@@ -7,15 +7,14 @@ export function DropZone({ onFile, disabled }: { onFile: (file: File) => void; d
   const [over, setOver] = useState(false)
 
   return (
-    <div
+    <label
+      className={`drop${over ? ' over' : ''}`}
       role="button"
       tabIndex={0}
-      className={`drop-zone${over ? ' is-over' : ''}${disabled ? ' is-disabled' : ''}`}
-      onClick={() => !disabled && input.current?.click()}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !disabled && input.current?.click()}
       onDragOver={(e) => {
         e.preventDefault()
-        setOver(true)
+        if (!disabled) setOver(true)
       }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => {
@@ -25,18 +24,20 @@ export function DropZone({ onFile, disabled }: { onFile: (file: File) => void; d
         if (file && !disabled) onFile(file)
       }}
     >
-      <p className="drop-title">Ses dosyasını buraya bırakın ya da tıklayıp seçin</p>
-      <p className="drop-note">Dosya bilgisayarınızdan çıkmaz. Parmak izi (SHA-256) tarayıcınızda hesaplanır.</p>
+      <div className="ico">⤓</div>
+      <div className="big">Dosyayı buraya bırak ya da tıklayıp seç</div>
+      <div className="sub">Parmak izi (SHA-256) tarayıcınızda hesaplanır</div>
       <input
         ref={input}
         type="file"
         hidden
+        disabled={disabled}
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) onFile(file)
           e.target.value = ''
         }}
       />
-    </div>
+    </label>
   )
 }
