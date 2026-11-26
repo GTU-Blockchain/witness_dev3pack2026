@@ -4,7 +4,7 @@ _25 Kasım 2026 güncellemesi. Notion'daki "Görevler" tablosunun aynısı. Saat
 
 Öncelik: **Hedef** = gün sonu kapısı, **MVP** = olmazsa olmaz, **Ekstra** = MVP sağlamsa, **Hazırlık** = kurulum.
 Roller: 1 Mobil UI · 2 Cüzdan + entegrasyon · 3 Solana programı · 4 Web doğrulama · 5 Backend + kaptan.
-Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi: İLK İŞ + gün sonu hedefi ✅, kişi planları `docs/GOREV_DAGILIMI.md`.)
+Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi: İLK İŞ + gün sonu hedefi ✅; ilk UI ekranları (Kayıt, Cüzdan bağla) ve Supabase her-dosya-türü desteği merge edildi — detay `docs/GOREV_DAGILIMI.md`.)
 
 ## Hazırlık 1 (25 Kas, Çarşamba)
 
@@ -19,7 +19,7 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [x] | Seeker'da Seed Vault Wallet kurulu mu, devnet'e geçiyor mu kontrol et | 2 | MVP | 25 Kas 14:00 | Seeker yok; emülatör + Phantom ile devnet bağlantısı teyit edildi |
 | [x] | MWA dokümanı: signAndSendTransactions üçüncü parti uygulamada çalışıyor mu | 2 | MVP | 25 Kas 14:00 | Pratikte kanıtlandı (Phantom in-app imza) |
 | [x] | **İLK İŞ:** Seeker'dan MWA ile devnet'e hash içeren Memo işlemi gönder (Memo yedeği de bu) | 2 | MVP | 25 Kas 18:00 | ✅ In-app Phantom imzası → devnet finalized (tx 246bvDWt…F4iYn) |
-| [ ] | Kayıt ekranı: kaydet / durdur / dinle, m4a (AAC, mono, 44.1 kHz) çıktısı | 1 | MVP | 25 Kas 22:00 | |
+| [~] | Kayıt ekranı: kaydet / durdur / dinle, m4a (AAC, mono, 44.1 kHz) çıktısı | 1 | MVP | 25 Kas 22:00 | UI 4 durum merged (Kişi A, PR #9, saf UI); gerçek ses kaydı/m4a çıktısı + navigasyon bağlama kaldı |
 | [~] | Dosyanın SHA-256 hash'ini telefonda hesapla | 2 | MVP | 25 Kas 20:00 | `app/utils/witness-hash.ts` (expo-crypto), shasum ile doğrulandı; ekrana bağlama + rebuild kaldı |
 | [x] | Anchor programı: Recording hesabı + register_recording + testler | 3 | MVP | 25 Kas 20:00 | Program yazıldı + 4 test localnet'te geçti |
 | [x] | Programı devnet'e deploy et, program ID + IDL paylaş | 3 | MVP | 25 Kas 23:00 | ✅ `2CyjSQFX…FZeeYJ` devnet'te; IDL + env'ler commit'li |
@@ -33,12 +33,12 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 
 | Durum | Görev | Rol | Öncelik | Bitiş | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
-| [ ] | Cüzdan bağla + Mühürleme durumu ekranları | 1 | MVP | 26 Kas 18:00 | |
+| [~] | Cüzdan bağla + Mühürleme durumu ekranları | 1 | MVP | 26 Kas 18:00 | Cüzdan bağla ekranı merged (Kişi B, PR #7 + /wallet route #8: bağla + bakiye + faucet uyarısı); Mühürleme durumu ekranı kaldı |
 | [x] | IDL'dan register_recording işlemi kur, imzalat, onay sonrası PDA'yı oku | 2 | MVP | 26 Kas 15:00 | ✅ In-app Phantom imzası → PDA devnet'te finalized (tx 5CBDMgt…, 4ZNRzP7…). Gerçek dosya hash'i bağlama kaldı |
 | [ ] | SPL Memo yedek yolu: uygulama + web (`?tx=`) hazır | 3 | MVP | 26 Kas 13:00 | Program öğlene kadar deploy değilse Memo ile devam |
 | [ ] | Gerçek PDA ile doğrulama: dosya yükle → ✅/❌, zaman, cüzdan | 4 | MVP | 26 Kas 18:00 | Program ID + IDL (3) |
 | [ ] | Doğrulama sayfasını Vercel'e deploy et | 4 | MVP | 26 Kas 20:00 | |
-| [x] | Edge Function'lar: register (zinciri kontrol eder) + transcribe | 5 | Ekstra | 26 Kas 22:00 | ✅ Canlıda (#2, #3); kullanım `supabase/README.md` |
+| [x] | Edge Function'lar: register (zinciri kontrol eder) + transcribe | 5 | Ekstra | 26 Kas 22:00 | ✅ Canlıda (#2, #3); kullanım `supabase/README.md`. Her dosya türü desteği eklendi (PR #6: `mime_type`, `skipped`; transcribe sadece ses/video) |
 | [ ] | **GÜN SONU HEDEFİ:** MVP uçtan uca (kaydet → mühürle → doğrula → kes → ❌) | Herkes | Hedef | 26 Kas 23:00 | Çalışmıyorsa 27 Kas'ta ekstra yok, sadece MVP |
 
 ## 1. gün (27 Kas, Cuma)
