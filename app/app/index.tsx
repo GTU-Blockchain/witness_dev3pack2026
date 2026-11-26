@@ -1,8 +1,9 @@
 import { NetworkFeatureIndex } from '@/features/network/network-feature-index'
 import { AccountFeatureIndex } from '@/features/account/account-feature-index'
 import { AppConfig } from '@/constants/app-config'
-import { Text, View } from 'react-native'
+import { Button, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Link } from 'expo-router'
 import React from 'react'
 import { appStyles } from '@/constants/app-styles'
 
@@ -19,6 +20,9 @@ export default function HomeScreen() {
             URL <Text style={{ fontWeight: 'bold' }}>{AppConfig.uri}</Text>
           </Text>
         </View>
+        <Link href="/wallet" asChild>
+          <Button title="Cüzdan ekranı" />
+        </Link>
         <AccountFeatureIndex />
         <NetworkFeatureIndex />
       </View>
