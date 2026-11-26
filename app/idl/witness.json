@@ -1,0 +1,201 @@
+{
+  "address": "2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ",
+  "metadata": {
+    "name": "witness",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Witness: ses kaydı hash'ini zincire bir kez yazan program"
+  },
+  "instructions": [
+    {
+      "name": "register_recording",
+      "discriminator": [
+        134,
+        1,
+        57,
+        133,
+        241,
+        98,
+        215,
+        15
+      ],
+      "accounts": [
+        {
+          "name": "recording",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  99
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "audio_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "audio_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "recorded_at",
+          "type": "i64"
+        },
+        {
+          "name": "duration_ms",
+          "type": "u32"
+        },
+        {
+          "name": "location_commitment",
+          "type": {
+            "option": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Recording",
+      "discriminator": [
+        127,
+        40,
+        57,
+        149,
+        55,
+        75,
+        215,
+        111
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "RecordingRegistered",
+      "discriminator": [
+        33,
+        181,
+        75,
+        66,
+        74,
+        153,
+        189,
+        180
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidDuration",
+      "msg": "duration_ms 0 olamaz"
+    }
+  ],
+  "types": [
+    {
+      "name": "Recording",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "audio_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recorded_at",
+            "type": "i64"
+          },
+          {
+            "name": "anchored_at",
+            "type": "i64"
+          },
+          {
+            "name": "duration_ms",
+            "type": "u32"
+          },
+          {
+            "name": "location_commitment",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecordingRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "audio_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "anchored_at",
+            "type": "i64"
+          },
+          {
+            "name": "duration_ms",
+            "type": "u32"
+          }
+        ]
+      }
+    }
+  ]
+}
