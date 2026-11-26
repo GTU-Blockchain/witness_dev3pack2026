@@ -28,6 +28,7 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
 | ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
 | ✅ | **Katman 1 — Paylaş-menüsü mühürleme (fonksiyonel iskelet)** | `feature/katman-1-share-intent` branch'i; galeriden gerçek foto → Paylaş → Witness → gerçek SHA-256 → register → devnet'te finalized (tx `3GxqbH92…CSHN`, hash `a2aac7fa…fab24`). UI şu an dev-scaffold kartı; gerçek UI **Rol 6** (bkz. aşağı) |
+| ✅ | **Rol 4 — Web doğrulama (MVP) merge + deploy + canlı doğrulama** | `feat/web-verify` main'e merge edildi; `web-pi-cyan-30.vercel.app` otomatik deploy ile canlı. Uçtan uca kanıt: Katman 1 ile mühürlenen foto siteye bırakıldı → tarayıcıda hash → zincir → **✅ "birebir aynı"** (hash `a2aac7fa…`, anchored_at + cüzdan + tx gösteriliyor). Kalan: `/v/<hash>`, `?tx=` Memo, `#k=`+transkript, pitch görselleri |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 
