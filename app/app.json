@@ -29,7 +29,10 @@
               "host": "web-pi-cyan-30.vercel.app"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -60,7 +63,17 @@
         }
       ],
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["audio/*", "image/*"],
+          "androidMainActivityAttributes": {
+            "android:launchMode": "singleTask"
+          },
+          "disableIOS": true
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true,

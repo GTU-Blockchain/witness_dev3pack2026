@@ -8,6 +8,8 @@ Ekip 5 kişi ama `docs/GOREV_PANOSU.md` görevleri 5 role 1:1 eşliyor (her role
 
 Türkiye'de local track olduğu teyit edildi.
 
+**Rol 6 (Katman 1 — Paylaş-menüsü mühürleme UI)** ayrı bir kişi değil; Rol 2+3'ü üstlenen kişinin, **ana UI geldikten sonra** yapacağı ek bir iş hattı. Fonksiyonel iskeleti bitti (devnet'te kanıtlı), kalan gerçek UI işi aşağıda Rol 6 planında.
+
 ## İlerleme durumu (2026-11-25)
 
 Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı.
@@ -25,6 +27,7 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_YEDEGI_SOZLESMESI.md` (Rol 4 bunu uygular) |
 | ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
 | ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
+| ✅ | **Katman 1 — Paylaş-menüsü mühürleme (fonksiyonel iskelet)** | `feature/katman-1-share-intent` branch'i; galeriden gerçek foto → Paylaş → Witness → gerçek SHA-256 → register → devnet'te finalized (tx `3GxqbH92…CSHN`, hash `a2aac7fa…fab24`). UI şu an dev-scaffold kartı; gerçek UI **Rol 6** (bkz. aşağı) |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 
@@ -37,6 +40,7 @@ Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `
 | Kişi B | 1 Mobil UI (parça 2) | Cüzdan bağla ekranı, Kayıt listesi, Kayıt detayı |
 | Kişi C | 4 Web doğrulama | Next.js doğrulama sayfası, `/v/<hash>`, Vercel deploy |
 | Kişi D | 5 Backend + kaptan | Supabase tablo/bucket/RLS, Edge Function'lar, check-in'ler, pitch/demo/gönderim |
+| Rol 6 (ben) | 6 Katman 1 — Paylaş-menüsü mühürleme UI | Share-to-Seal akışının gerçek UI'ı: paylaşımla gelen dosyayı mühürleme, dosya önizleme, Phantom dönüşünde kalıcı sonuç. **Ana UI (Rol 1) geldikten sonra** yapılacak |
 
 Ortak kurallar (hash tanımı, ses formatı, PDA seed, Memo formatı, gizli anahtar kuralı) `docs/TEKNIK_DOKUMAN.md` → "Ortak kurallar" tablosunda; burada tekrarlanmıyor.
 
@@ -150,6 +154,28 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 - Transkripti uygulamaya asenkron bağla (mühürlemeyi bekletmez).
 - `functions/upload-url/index.ts` (şu an stub) — `register` edilmiş kayıt için şifreli dosya yükleme URL'si.
 - **Kaptan sorumlulukları (sürekli):** düzenli check-in'ler (ne bitti/ne takıldı/kim kimi bekliyor), mentor/jüri iletişimi, benzer ürün araması + pitch taslağı, pitch + demo videosu + sunum provası, gönderim.
+
+---
+
+## Rol 6 planı: Katman 1 — Paylaş-menüsü mühürleme (Share-to-Seal) UI
+
+(sahibi: ben · **ön koşul: Rol 1'in ana UI'ı, özellikle Mühürleme durumu ekranı geldikten sonra**)
+
+Fonksiyonel iskelet hazır ve devnet'te kanıtlı (`feature/katman-1-share-intent`): başka bir uygulamadan paylaşılan dosya, Witness hiç açılmadan, gerçek SHA-256'sıyla zincire mühürleniyor (`expo-share-intent`, `account-feature-seal-shared.tsx`). Eksik olan **gerçek UI** — şu an dev-scaffold kartına sıkışmış durumda. Bu rol o akışı gerçek ekranlara oturtur. Ana UI geldikten sonra, Rol 1'in ekranlarını tekrar yazmadan onların üstüne kurulur.
+
+Giriş noktası ikileşti: mühürleme artık (a) uygulama içi **Kayıt ekranı** ve (b) **dış paylaşım** olmak üzere iki yerden başlıyor; ikisi de **aynı mühürleme hattına** akmalı.
+
+- **Odaklı mühürleme ekranı (kart değil):** Paylaşım gelince `/seal` route'una yönlendir (expo-router); dev ana ekranına kart basma. `hasShareIntent` → dedike ekran.
+- **Phantom gidiş-dönüşünde kalıcı sonuç (en kritik):** Bugün `resetOnBackground` paylaşımı sıfırlıyor, Phantom'dan dönünce "Mühürlendi ✓" kayboluyor (işlem yine de gidiyor). Sonuç state'i (hash, imza, PDA) ekranda/kalıcı tutulmalı.
+- **Dosya önizleme — tipe göre:** foto → thumbnail; ses → oynatıcı + ad/boyut/süre. Şu an sadece ad + mime yazıyor; `mimeType`'a göre dallanan önizleme.
+- **Ortak "Mühürleme durumu" hattı:** Rol 1'in "Mühürleme durumu ekranı"nı tek merkez yap (Hash hesaplanıyor → Cüzdan onayı → Zincire yazılıyor → ✅ Mühürlendi); hem kayıt hem paylaşım ona aksın.
+- **Sonuç ekranı:** hash'in ilk 8'i, Explorer linki, "Doğrulama linkini paylaş/kopyala", "Yeni mühür".
+- **"Önce cüzdan bağla" yolu:** paylaşım geldiğinde cüzdan bağlı değilse, bağla → **kaldığın mühre dön** (bağlamı kaybetme).
+- **Hata + Tekrar dene (dostça):** "Failed to simulate", süre, ağ hataları ham string yerine anlaşılır mesaj. (Not: foto gibi süresiz dosyada `duration_ms` en az 1 gönderilmeli — program `duration_ms > 0` istiyor; `seal-shared` bunu `Math.max(1, …)` ile hallediyor.)
+- **Soğuk başlatma:** app kapalıyken paylaşımla açılırsa doğrudan mühürleme ekranına düşsün.
+- **Ekstra:** `image/*` için demo akışı (foto mühürleme), ileride Katman 4 (Seeker kamerasına gömülü capture-time imza) vizyonuna köprü.
+
+Teknik durum ve tuzaklar `memory` + `feature/katman-1-share-intent` branch'inde; sağlamlık notu: `expo-share-intent` v9 boş-metadata cursor'da çökebiliyor (gerçek paylaşımda olmuyor), gerekirse patch-package guard'ı.
 
 ---
 
