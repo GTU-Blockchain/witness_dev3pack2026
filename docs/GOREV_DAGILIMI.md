@@ -24,7 +24,7 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | SHA-256 hash util | `app/utils/witness-hash.ts` (expo-crypto), `shasum -a 256` ile doğrulandı |
 | ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_YEDEGI_SOZLESMESI.md` (Rol 4 bunu uygular) |
 | ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
-| ✅ | `register_recording` çağrısı (kod + devnet kanıtı) | `app/utils/witness-program.ts` + in-app buton; `scripts/register-recording-devnet.mjs` ile PDA devnet'te açıldı/okundu. In-app MWA testi + gerçek dosya hash'i kaldı |
+| ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A/B ekran ekleyebilir (çakışma notu için "Açık sorular").
 
