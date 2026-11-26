@@ -62,17 +62,17 @@ export function WalletView({
       {!address ? (
         <View style={styles.body}>
           <View style={styles.center}>
-            <Text style={styles.label}>CÜZDAN BAĞLI DEĞİL</Text>
+            <Text style={styles.label}>WALLET NOT CONNECTED</Text>
             <Text style={styles.network}>Solana {networkLabel}</Text>
           </View>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <PrimaryButton title="Cüzdanı bağla" loading={connecting} onPress={onConnect} />
+          <PrimaryButton title="Connect Wallet" loading={connecting} onPress={onConnect} />
         </View>
       ) : (
         <View style={styles.body}>
           <View style={styles.card}>
             <View style={styles.cardRow}>
-              <Text style={styles.label}>CÜZDAN</Text>
+              <Text style={styles.label}>WALLET</Text>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{networkLabel.toUpperCase()}</Text>
               </View>
@@ -84,11 +84,11 @@ export function WalletView({
           </View>
 
           <View style={styles.center}>
-            <Text style={styles.label}>BAKİYE</Text>
+            <Text style={styles.label}>BALANCE</Text>
             {balanceError ? (
-              <Text style={styles.errorText}>Bakiye okunamadı</Text>
+              <Text style={styles.errorText}>{"Couldn't load balance"}</Text>
             ) : balanceSol === null ? (
-              <Text style={styles.balanceLoading}>Bakiye yükleniyor…</Text>
+              <Text style={styles.balanceLoading}>Loading balance…</Text>
             ) : (
               <Text style={styles.balance}>{balanceSol.toFixed(3)} SOL</Text>
             )}
@@ -96,9 +96,9 @@ export function WalletView({
 
           {isLow ? (
             <View style={styles.warning}>
-              <Text style={styles.warningTitle}>BAKİYE DÜŞÜK</Text>
-              <Text style={styles.warningText}>Mühürlemek için devnet SOL gerekir.</Text>
-              <SecondaryButton title="Faucet'i aç" onPress={() => Linking.openURL(FAUCET_URL)} />
+              <Text style={styles.warningTitle}>LOW BALANCE</Text>
+              <Text style={styles.warningText}>You need devnet SOL to seal recordings.</Text>
+              <SecondaryButton title="Open Faucet" onPress={() => Linking.openURL(FAUCET_URL)} />
             </View>
           ) : null}
         </View>
@@ -173,7 +173,7 @@ export function WalletScreen() {
             setConnecting(true)
             await connect()
           } catch {
-            setError('Bağlanılamadı. Cüzdan uygulaması açık mı?')
+            setError("Couldn't connect. Is a wallet app installed?")
           } finally {
             setConnecting(false)
           }
