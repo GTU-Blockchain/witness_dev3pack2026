@@ -9,8 +9,8 @@ import { lookupRecording, type LookupResult } from '@/lib/recording'
 type State =
   | { phase: 'idle' }
   | { phase: 'working'; fileName: string; step: string; hash?: string }
-  | { phase: 'done'; fileName: string; hash: string; result: LookupResult }
-  | { phase: 'error'; fileName: string; hash?: string; message: string }
+  | { phase: 'done'; fileName: string; hash: string; result: LookupResult; file: File }
+  | { phase: 'error'; fileName: string; message: string }
 
 export function Verifier() {
   const [state, setState] = useState<State>({ phase: 'idle' })
@@ -18,32 +18,42 @@ export function Verifier() {
   async function verify(file: File) {
     const fileName = file.name
     setState({ phase: 'working', fileName, step: 'Parmak izi hesaplanıyor…' })
-    let hash: string | undefined
     try {
-      hash = await sha256HexOfFile(file)
+      const hash = await sha256HexOfFile(file)
       setState({ phase: 'working', fileName, hash, step: 'Zincir kaydı okunuyor…' })
       const result = await lookupRecording(hash)
-      setState({ phase: 'done', fileName, hash, result })
+      setState({ phase: 'done', fileName, hash, result, file })
     } catch (e) {
-      setState({ phase: 'error', fileName, hash, message: e instanceof Error ? e.message : String(e) })
+      setState({ phase: 'error', fileName, message: e instanceof Error ? e.message : String(e) })
     }
   }
 
   return (
-    <>
+    <div className="card">
       <DropZone onFile={verify} disabled={state.phase === 'working'} />
+
       {state.phase === 'working' && (
-        <p style={{ marginTop: 16 }}>
+        <div className="working">
           {state.step}
-          {state.hash && <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 13 }}>{state.hash}</span>}
-        </p>
+          {state.hash && <span className="h">{state.hash}</span>}
+        </div>
       )}
+
       {state.phase === 'error' && (
-        <p style={{ marginTop: 16, color: '#b91c1c' }}>
+        <div className="working">
           Doğrulama tamamlanamadı (ağ hatası olabilir): {state.message}. Lütfen tekrar deneyin.
-        </p>
+        </div>
       )}
-      {state.phase === 'done' && <ResultCard fileName={state.fileName} hash={state.hash} result={state.result} />}
-    </>
+
+      {state.phase === 'done' && (
+        <ResultCard
+          fileName={state.fileName}
+          hash={state.hash}
+          result={state.result}
+          file={state.file}
+          onReset={() => setState({ phase: 'idle' })}
+        />
+      )}
+    </div>
   )
 }
