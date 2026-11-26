@@ -3,6 +3,7 @@ import { Link, Redirect } from 'expo-router'
 import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
+import { C } from '@/constants/theme'
 import { WalletScreen } from '@/features/wallet/wallet-screen'
 
 export default function WalletRoute() {
@@ -14,7 +15,7 @@ export default function WalletRoute() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0e16' }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       <WalletScreen />
       {/* Ekip içi test sayfası; sadece geliştirme sürümünde görünür */}
       {__DEV__ ? (
@@ -27,5 +28,5 @@ export default function WalletRoute() {
 }
 
 const styles = StyleSheet.create({
-  devLink: { alignSelf: 'center', color: '#8a94a6', fontSize: 12, paddingBottom: 8 },
+  devLink: { alignSelf: 'center', color: C.muted, fontSize: 12, paddingBottom: 8 },
 })

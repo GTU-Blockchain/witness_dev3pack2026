@@ -1,27 +1,13 @@
 import React, { useState } from 'react'
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
+import { AppHeader } from '@/components/app-header'
+import { C, MONO } from '@/constants/theme'
 import { useAccountGetBalance } from '@/features/account/use-account-get-balance'
 
 const LOW_BALANCE_SOL = 0.05
 const FAUCET_URL = 'https://faucet.solana.com'
-
-// Template (Witness Seeker prototipi) renkleri
-const colors = {
-  bg: '#0a0e16',
-  card: '#121a27',
-  border: '#1e2838',
-  pill: '#1a2230',
-  text: '#f1f5f9',
-  muted: '#8a94a6',
-  green: '#10b981',
-  greenSoft: 'rgba(16, 185, 129, 0.15)',
-  red: '#ef4444',
-  redSoft: 'rgba(239, 68, 68, 0.12)',
-  secondary: '#1f2937',
-}
-const mono = Platform.select({ ios: 'Menlo', default: 'monospace' })
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
 
@@ -49,15 +35,7 @@ export function WalletView({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.appName}>Witness</Text>
-        {address ? (
-          <View style={styles.addressPill}>
-            <View style={styles.dot} />
-            <Text style={styles.addressPillText}>{shortAddress(address)}</Text>
-          </View>
-        ) : null}
-      </View>
+      <AppHeader walletLabel={address ? shortAddress(address) : undefined} />
 
       {!address ? (
         <View style={styles.body}>
@@ -115,7 +93,7 @@ function PrimaryButton({ title, loading, onPress }: { title: string; loading?: b
       style={({ pressed }) => [styles.primaryButton, (pressed || loading) && styles.pressed]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.bg} />
+        <ActivityIndicator color={C.onEmerald} />
       ) : (
         <Text style={styles.primaryButtonText}>{title}</Text>
       )}
@@ -185,73 +163,42 @@ export function WalletScreen() {
   return <ConnectedWallet address={account.address} networkLabel={networkLabel} />
 }
 
+// Stiller RecordScreen ile aynı ölçüler (ortak tema: constants/theme.ts)
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  appName: { color: colors.text, fontSize: 20, fontWeight: '600' },
-  addressPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.pill,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.green },
-  addressPillText: { color: colors.text, fontFamily: mono, fontSize: 13 },
-  body: { flex: 1, paddingTop: 16, gap: 16 },
+  screen: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 16 },
+  body: { flex: 1, gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    gap: 10,
-  },
+  card: { backgroundColor: C.surface, borderRadius: 20, padding: 18, gap: 14 },
   cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { color: colors.muted, fontFamily: mono, fontSize: 12, letterSpacing: 1.5 },
-  cardValue: { color: colors.text, fontSize: 14, fontWeight: '500' },
-  cardMono: { color: colors.text, fontFamily: mono, fontSize: 13 },
-  badge: { backgroundColor: colors.greenSoft, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { color: colors.green, fontFamily: mono, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-  network: { color: colors.text, fontFamily: mono, fontSize: 13 },
-  balance: { color: colors.text, fontFamily: mono, fontSize: 40, fontWeight: '500' },
-  balanceLoading: { color: colors.muted, fontFamily: mono, fontSize: 14 },
-  warning: {
-    backgroundColor: colors.redSoft,
-    borderColor: colors.red,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    gap: 8,
-  },
-  warningTitle: { color: colors.red, fontFamily: mono, fontSize: 12, fontWeight: '700', letterSpacing: 1.5 },
-  warningText: { color: colors.text, fontSize: 13 },
-  errorText: { color: colors.red, fontSize: 13, textAlign: 'center' },
+  label: { color: C.muted, fontSize: 12, fontFamily: MONO, letterSpacing: 1.4 },
+  cardValue: { color: C.text, fontSize: 15, fontWeight: '500' },
+  cardMono: { color: C.textSoft, fontFamily: MONO, fontSize: 13 },
+  badge: { backgroundColor: C.emeraldSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  badgeText: { color: C.emerald, fontSize: 12, fontFamily: MONO, letterSpacing: 1 },
+  network: { color: C.textSoft, fontFamily: MONO, fontSize: 13 },
+  balance: { color: C.text, fontFamily: MONO, fontSize: 40, fontWeight: '500' },
+  balanceLoading: { color: C.muted, fontFamily: MONO, fontSize: 14 },
+  warning: { backgroundColor: C.redSoft, borderColor: C.red, borderWidth: 1, borderRadius: 20, padding: 18, gap: 10 },
+  warningTitle: { color: C.red, fontSize: 12, fontFamily: MONO, letterSpacing: 1.4 },
+  warningText: { color: C.text, fontSize: 14 },
+  errorText: { color: C.red, fontSize: 13, textAlign: 'center' },
   primaryButton: {
-    backgroundColor: colors.green,
-    borderRadius: 999,
-    height: 50,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: C.sealGreen,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryButtonText: { color: colors.bg, fontSize: 16, fontWeight: '600' },
+  primaryButtonText: { color: C.onEmerald, fontSize: 17, fontWeight: '600' },
   secondaryButton: {
-    backgroundColor: colors.secondary,
-    borderRadius: 999,
-    height: 46,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryButtonText: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  pressed: { opacity: 0.8 },
+  secondaryButtonText: { color: C.textSoft, fontSize: 17, fontWeight: '600' },
+  pressed: { opacity: 0.85 },
 })
