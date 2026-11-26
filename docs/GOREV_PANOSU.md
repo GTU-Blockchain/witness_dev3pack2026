@@ -36,8 +36,8 @@ Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (26 Kas güncellemesi:
 | [~] | Cüzdan bağla + Mühürleme durumu ekranları | 1 | MVP | 26 Kas 18:00 | Cüzdan bağla ekranı merged (Kişi B, PR #7 + /wallet route #8: bağla + bakiye + faucet uyarısı); Mühürleme durumu ekranı kaldı |
 | [x] | IDL'dan register_recording işlemi kur, imzalat, onay sonrası PDA'yı oku | 2 | MVP | 26 Kas 15:00 | ✅ In-app Phantom imzası → PDA devnet'te finalized (tx 5CBDMgt…, 4ZNRzP7…). Gerçek dosya hash'i bağlama kaldı |
 | [ ] | SPL Memo yedek yolu: uygulama + web (`?tx=`) hazır | 3 | MVP | 26 Kas 13:00 | Program öğlene kadar deploy değilse Memo ile devam |
-| [ ] | Gerçek PDA ile doğrulama: dosya yükle → ✅/❌, zaman, cüzdan | 4 | MVP | 26 Kas 18:00 | Program ID + IDL (3) |
-| [ ] | Doğrulama sayfasını Vercel'e deploy et | 4 | MVP | 26 Kas 20:00 | |
+| [x] | Gerçek PDA ile doğrulama: dosya yükle → ✅/❌, zaman, cüzdan | 4 | MVP | 26 Kas 18:00 | ✅ `feat/web-verify` merge; PDA + `getAccountInfo` (`web/lib/recording.ts`). Uçtan uca kanıt: mühürlü foto → hash → zincir → ✅ "birebir aynı" (anchored_at + cüzdan + tx) |
+| [x] | Doğrulama sayfasını Vercel'e deploy et | 4 | MVP | 26 Kas 20:00 | ✅ `web-pi-cyan-30.vercel.app` otomatik deploy ile canlı |
 | [x] | Edge Function'lar: register (zinciri kontrol eder) + transcribe | 5 | Ekstra | 26 Kas 22:00 | ✅ Canlıda (#2, #3); kullanım `supabase/README.md`. Her dosya türü desteği eklendi (PR #6: `mime_type`, `skipped`; transcribe sadece ses/video) |
 | [ ] | **GÜN SONU HEDEFİ:** MVP uçtan uca (kaydet → mühürle → doğrula → kes → ❌) | Herkes | Hedef | 26 Kas 23:00 | Çalışmıyorsa 27 Kas'ta ekstra yok, sadece MVP |
 
