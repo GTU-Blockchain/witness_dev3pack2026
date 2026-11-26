@@ -133,12 +133,15 @@ function SecondaryButton({ title, onPress }: { title: string; onPress: () => voi
 
 // ---- Bağlıyken bakiyeyi okuyan parça (hook'u koşullu çağıramayız, o yüzden ayrı) ----
 function ConnectedWallet({ address, networkLabel }: { address: PublicKey; networkLabel: string }) {
-  const { data: lamports, isError } = useAccountGetBalance({ address })
+  // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de);
+  // getBalance PublicKey beklediği için normalize et (bkz. account-feature-seal-shared.tsx).
+  const publicKey = address instanceof PublicKey ? address : new PublicKey(address as unknown as string)
+  const { data: lamports, isError } = useAccountGetBalance({ address: publicKey })
   const balanceSol = typeof lamports === 'number' ? lamports / LAMPORTS_PER_SOL : null
 
   return (
     <WalletView
-      address={address.toString()}
+      address={publicKey.toString()}
       balanceSol={balanceSol}
       balanceError={isError}
       networkLabel={networkLabel}
