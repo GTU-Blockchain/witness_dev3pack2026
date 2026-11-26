@@ -110,7 +110,13 @@ Kullanıcı "Paylaş" dediğinde: telefon dosyayı AES-256-GCM ile şifreler →
 **Yükleme (uygulama):**
 
 ```ts
-const { data, error } = await supabase.functions.invoke("upload-url", { body: { audio_hash: audioHash } });
+// 1. Sahiplik kanıtı: kaydı register eden cüzdan bu mesajı imzalar (MWA signMessages)
+const message = new TextEncoder().encode(`witness-upload:${audioHash}`);
+const [signed] = await signMessages([message]); // dönen bayt dizisi (sadece imza ya da mesaj+imza, ikisi de kabul)
+const signature = Buffer.from(signed).toString("base64"); // base58 de kabul
+
+// 2. Yükleme izni
+const { data, error } = await supabase.functions.invoke("upload-url", { body: { audio_hash: audioHash, signature } });
 // data: { path: "<audio_hash>.m4a.enc", token, expires_in: 7200 }
 
 await supabase.storage
@@ -120,7 +126,8 @@ await supabase.storage
 
 | HTTP | `error` | Anlamı |
 | --- | --- | --- |
-| 400 | `bad_json`, `bad_audio_hash` | İstek biçimi yanlış |
+| 400 | `bad_json`, `bad_audio_hash`, `bad_signature` | İstek biçimi yanlış ya da `signature` yok |
+| 403 | `not_owner` | İmza, kaydı register eden cüzdana ait değil (ya da başka bir hash için atılmış) |
 | 404 | `not_registered` | Önce `register` başarılı olmalı |
 | 409 | `already_uploaded` | Bu kayıt için dosya zaten var; üzerine yazılamaz. Paylaşım linki zaten çalışır |
 | 500 | `db_error`, `storage_error` | Sunucu tarafı sorun |
@@ -139,7 +146,7 @@ Dosya türü: yol her türde `<audio_hash>.m4a.enc`; gerçek tür satırdaki `mi
 
 Not: `storage_path`, yükleme izni verildiği anda yazılır. Yükleme yarıda kaldıysa dosya bulunamaz; sayfa bunu "dosya henüz yüklenmemiş" olarak göstermeli.
 
-**Bilinen sınır (hackathon için kabul edildi):** `upload-url` isteyenin kaydın sahibi olduğunu kontrol etmez. Hash'ler zincirde herkese açık olduğundan biri, sahibinden önce başkasının kaydı için izin alıp çöp dosya yükleyebilir; sahibi sonra `409 already_uploaded` alır ve paylaşamaz. Kimse kandırılamaz: doğrulama sayfası o dosya için ❌ gösterir. Kalıcı çözüm: istekte cüzdanın `witness-upload:<hash>` mesajına attığı imza (MWA `signMessages`) ve fonksiyonda ed25519 doğrulaması; uygulamada ek bir onay ekranı demek, bu yüzden şimdilik yapılmadı.
+**Sahiplik:** `upload-url` sadece kaydı register eden cüzdanın imzasıyla izin verir. Hash'ler zincirde herkese açık olsa da başkası, sahibinden önce kayda çöp dosya yükleyip paylaşımı kilitleyemez (`403 not_owner`). Uygulamada paylaşımdan önce cüzdanda bir "mesaj imzala" onayı çıkar; işlem ücreti yok.
 
 ## Görevler
 
