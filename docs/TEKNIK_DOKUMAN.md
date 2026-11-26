@@ -178,24 +178,25 @@ Supabase MVP'nin kritik yolunda değil: doğrulama sadece zincire bakar. Supabas
 | `tx_signature` | `text` not null | Mühürleme işlemi |
 | `wallet` | `text` not null | Base58 cüzdan adresi |
 | `pda` | `text` | Memo yedeğinde boş |
-| `duration_ms` | `int` | |
+| `duration_ms` | `int` | Fotoğraf gibi süresiz dosyalarda `1` (program `> 0` istiyor); sadece ses/videoda gösterilir |
 | `anchored_at` | `timestamptz` | Zincirden okunan zaman, önbellek |
 | `transcript` | `text` | ElevenLabs çıktısı |
 | `transcript_lang` | `text` | `tr`, `en` |
-| `transcript_status` | `text` | `pending` / `done` / `failed` |
+| `transcript_status` | `text` | `pending` / `done` / `failed` / `skipped` (ses/video değil, transkript yapılmaz) |
+| `mime_type` | `text` | Dosya türü (`audio/mp4`, `image/jpeg`…). Uygulama `register`'da gönderir; doğrulama sayfası çözülen dosyayı buna göre gösterir. Boşsa ses varsayılır |
 | `storage_path` | `text` | Sadece kullanıcı paylaştıysa |
 | `is_encrypted` | `bool` default `true` | |
 | `has_genesis_token` | `bool` | Rozet önbelleği |
 | `created_at` | `timestamptz` default `now()` | |
 
-**Storage:** `recordings` bucket'ı, private. Yol `<audio_hash>.m4a.enc`. Okuma imzalı URL ile (1 saat), yazma sadece Edge Function üzerinden.
+**Storage:** `recordings` bucket'ı, private. Yol `<audio_hash>.m4a.enc` (her dosya türü için aynı yol; dosya şifreli olduğu için uzantının anlamı yok, gerçek tür `mime_type`'ta). Okuma imzalı URL ile (1 saat), yazma sadece Edge Function üzerinden.
 
 **Edge Function'lar:**
 
 | Fonksiyon | Girdi | Ne yapar |
 | --- | --- | --- |
-| `register` | `audio_hash`, `tx_signature`, `wallet` | İşlemi devnet'ten okur, onaylı olduğunu ve PDA'daki hash/cüzdanın eşleştiğini kontrol eder, sonra satırı ekler. Sahte kayıt eklenemez |
-| `transcribe` | `audio_hash` + ses dosyası | ElevenLabs Scribe'a gönderir, `transcript`'i yazar. API anahtarı sadece burada (Supabase secret) durur |
+| `register` | `audio_hash`, `tx_signature`, `wallet`, `mime_type` (isteğe bağlı) | İşlemi devnet'ten okur, onaylı olduğunu ve PDA'daki hash/cüzdanın eşleştiğini kontrol eder, sonra satırı ekler. Sahte kayıt eklenemez |
+| `transcribe` | `audio_hash` + ses/video dosyası | Sadece ses ve video kabul eder (foto, belge → `415`, `skipped`). ElevenLabs Scribe'a gönderir, `transcript`'i yazar. API anahtarı sadece burada (Supabase secret) durur |
 | `upload-url` | `audio_hash` | Kayıt `register` edilmişse şifreli dosya için tek seferlik yükleme URL'si verir |
 
 **Güvenlik (RLS):** `recordings` tablosunda herkes okuyabilir (doğrulama sayfası için), `anon` rolüyle yazma kapalı. Tüm yazmalar service role ile Edge Function'lardan yapılır. Cüzdanla giriş (Sign-In With Solana) yok; hackathon için `register`'ın zincir kontrolü yeterli.
