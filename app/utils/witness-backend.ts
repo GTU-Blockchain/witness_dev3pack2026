@@ -4,6 +4,11 @@
 // Mühür zincirde olduktan sonra ARKA PLANDA çalışır; kullanıcı hiçbir zaman bunu beklemez.
 // Supabase'e ulaşılamazsa kanıt kaybolmaz (mühür zincirde), sadece transkript gelmez.
 
+// New Architecture (Fabric) açıkken fetch + FormData ile dosya yüklemek "Unsupported
+// FormDataPart implementation" verip istek ağa çıkmadan patlıyor. Bu yüzden transcribe
+// dosyayı expo-file-system'in native multipart upload'ıyla (uploadAsync, legacy API) gönderir.
+import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy'
+
 // Public değerler (.env.example ile aynı); .env varsa oradan gelir.
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://tckkwwejujtjgzufbecl.supabase.co'
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_SkZJ_A0YUfhA_2v-yev1sw_AsEuKR-f'
@@ -49,6 +54,15 @@ async function callFunction<T>(name: string, body: BodyInit, timeoutMs: number, 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+// uploadAsync'in AbortController'ı yok; yükleme süreyi aşarsa promise'i reddet (native
+// yükleme kısa süre devam edebilir, arka plan en-iyi-çaba akışı için sorun değil).
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms)),
+  ])
+}
+
 export type RegisterInput = {
   /** 64 karakter küçük harf hex. */
   hash: string
@@ -81,23 +95,47 @@ export async function registerRecording(input: RegisterInput): Promise<void> {
 
 export type TranscriptResult = { transcript: string | null; lang: 'tr' | 'en' | null }
 
-/** Mühürlenen dosyanın aynısını (yeniden kodlanmamış) gönderir, transkripti döner. Sadece ses/video için. */
+type TranscribeResponse = {
+  transcript?: string | null
+  transcript_lang?: 'tr' | 'en' | null
+  error?: string
+  message?: string
+}
+
+/** Mühürlenen dosyanın aynısını (yeniden kodlanmamış) gönderir, transkripti döner. Sadece ses/video için.
+ *  Dosya, server'ın beklediği multipart form ile gider: `file` alanı + `audio_hash` parametresi
+ *  (callFunction/fetch değil; New Arch FormData kısıtı için native uploadAsync — bkz. üstteki not). */
 export async function transcribeRecording(
   hash: string,
   fileUri: string,
   mimeType = 'audio/mp4',
 ): Promise<TranscriptResult> {
-  const form = new FormData()
-  form.append('audio_hash', hash)
-  // React Native FormData dosyayı { uri, name, type } ile alır.
-  form.append('file', { uri: fileUri, name: 'recording.m4a', type: mimeType } as unknown as Blob)
-  const data = await callFunction<{ transcript: string | null; transcript_lang: 'tr' | 'en' | null }>(
-    'transcribe',
-    form,
-    TRANSCRIBE_TIMEOUT_MS,
-    false,
-  )
-  return { transcript: data.transcript, lang: data.transcript_lang }
+  let result
+  try {
+    result = await withTimeout(
+      uploadAsync(`${SUPABASE_URL}/functions/v1/transcribe`, fileUri, {
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType,
+        parameters: { audio_hash: hash },
+        headers: { apikey: SUPABASE_ANON_KEY },
+      }),
+      TRANSCRIBE_TIMEOUT_MS,
+    )
+  } catch (e) {
+    throw new BackendError(0, 'network', e instanceof Error ? e.message : String(e))
+  }
+  let data: TranscribeResponse = {}
+  try {
+    data = JSON.parse(result.body) as TranscribeResponse
+  } catch {
+    // boş/HTML gövde: data {} kalır, aşağıda status'a göre hata üretilir
+  }
+  if (result.status < 200 || result.status >= 300) {
+    throw new BackendError(result.status, data.error ?? 'unknown', data.message ?? `HTTP ${result.status}`)
+  }
+  return { transcript: data.transcript ?? null, lang: data.transcript_lang ?? null }
 }
 
 export const isTranscribable = (mimeType: string) => mimeType.startsWith('audio/') || mimeType.startsWith('video/')
