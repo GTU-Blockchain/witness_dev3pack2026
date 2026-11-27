@@ -27,6 +27,19 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 - **Program (devnet):** [`2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`](https://explorer.solana.com/address/2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ?cluster=devnet)
 - **Status:** full flow proven end‑to‑end on devnet — audio recordings and shared/picked photos sealed, then independently re‑verified (browser hash + `getAccountInfo` on the PDA, byte‑for‑byte match).
 
+## Built today
+
+Everything in this list is in the code and runs on devnet now. Anything not listed here is in the [Roadmap](#roadmap).
+
+- In-app audio recording (m4a / AAC)
+- "Share → Witness" and the system file picker, for any media type
+- On-device SHA‑256 of the file's raw bytes (the browser verifier streams files over 64 MB)
+- Signing through Mobile Wallet Adapter (any MWA wallet; tested with Phantom)
+- Anchor program `register_recording` on devnet: one immutable record per hash; no close, no update, no admin
+- `register` Edge Function that independently re-verifies the tx, signer, instruction, PDA and account before writing to the DB
+- Browser verifier: in-browser hash → PDA → `getAccountInfo` → ✅ / ❌; it never uploads the file
+- Optional transcription (ElevenLabs Scribe) for audio and video
+
 ## How it works
 
 Critical path: **app → hardware wallet → program → PDA ← verification page.** Supabase and ElevenLabs (dashed) are additive — if they go down, sealing and verification still work, because the proof lives entirely on‑chain.
@@ -57,13 +70,59 @@ flowchart LR
   EF -. transcription .-> EL
 ```
 
-## Three ways to seal — one proven path
+### Three ways to seal, one pipeline
 
 Every entry point copies the file untouched and flows into the exact same seal pipeline (`hash → wallet approval → register_recording`):
 
 1. **Record** — capture audio in‑app (m4a / AAC, mono, 44.1 kHz).
 2. **Share** — "Share → Witness" from any app (gallery, camera, recorder, Files). Photos, video, audio, PDF.
 3. **Pick a file** — "Seal an existing file" opens the system picker for any media. Share‑sheet‑independent, so it works reliably even on stage.
+
+## Vision: Witness as a Solana Mobile layer
+
+The app is the core loop. The goal is for it to stop being an app at all.
+
+On a Solana Mobile device, Witness can live in the capture pipeline itself: every photo, voice note and video
+is fingerprinted the moment it is written to storage and sealed on Solana, so media from a Seeker is
+**provably unaltered by default**: by anyone, permissionlessly, forever.
+
+Three platform pieces make this possible, and they ship together on Solana Mobile:
+
+| Piece | Role in the layer |
+| --- | --- |
+| **Seed Vault** | Hardware-isolated key the seal can be rooted in |
+| **Mobile Wallet Adapter** | Lets a capture service request signatures without holding the key |
+| **Open Android capture stack** | `MediaStore` / `ContentObserver` hooks to fingerprint media at write time |
+
+What it takes to get from today's app to that layer is listed concretely in the [Roadmap](#roadmap).
+**None of the items below are implemented yet**; today every seal is an explicit, per-file wallet approval.
+
+## Roadmap
+
+Not implemented yet. Each item moves to [Built today](#built-today) only when it is in the code.
+
+- [ ] Capture hook: auto-fingerprint new media via `MediaStore` / `ContentObserver`
+- [ ] Delegated signing: a scoped session key authorized once, so background seals need no per-photo approval
+- [ ] Merkle rollup: batch many captures into one periodic on-chain root; verify with an inclusion proof
+- [ ] Offline queue: hash now, seal when connected
+- [ ] Device attestation: Seeker Genesis Token check and/or Android Key Attestation for in-app captures
+- [ ] End-to-end encrypted share links (`/v/<hash>#k=<key>`, AES‑256‑GCM)
+- [ ] C2PA interop: emit a Content Credentials manifest that carries the Solana anchor
+
+## Known limitations (and planned fixes)
+
+- **First-sealer wins.** Records are addressed by `["rec", hash]`, so whoever seals a hash first owns that
+  record. If someone gets the file before its creator seals it, they can register it under their wallet.
+  *Fix (v2):* seeds `["rec", authority, hash]`. Every wallet can attest independently, and the verifier shows
+  the earliest attestation.
+- **One field name for all media.** The on-chain field is still `audio_hash` and `duration_ms` must be > 0,
+  from before Witness supported photos and files. *Fix (v2):* `content_hash`, a `media_kind` field, and
+  `duration_ms` optional for still media.
+- **No device attestation.** A seal proves which wallet signed it, not which device captured the file.
+  Imported files and in-app captures look the same on chain. *Planned:* Seeker Genesis Token and Android
+  Key Attestation for in-app captures.
+- **Exact-byte matching.** Re-encoding (e.g. messaging apps compressing a video) changes the hash. The
+  original has to be shared as-is.
 
 ## Verify it yourself
 
