@@ -4,7 +4,7 @@ _25 Kasım 2026 güncellemesi. Notion'daki "Görevler" tablosunun aynısı. Saat
 
 Öncelik: **Hedef** = gün sonu kapısı, **MVP** = olmazsa olmaz, **Ekstra** = MVP sağlamsa, **Hazırlık** = kurulum.
 Roller: 1 Mobil UI · 2 Cüzdan + entegrasyon · 3 Solana programı · 4 Web doğrulama · 5 Backend + kaptan · 6 Katman 1 (Paylaş-menüsü mühürleme, Rol 2+3'ün ek hattı).
-Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (27 Kas güncellemesi: **MVP uçtan uca bağlandı ve devnet'te bağımsız doğrulandı** — kaydet→mühürle→doğrula tam akış gerçek ekranlarla çalışıyor (PR #14), backend app'e eklendi (PR #15), New Arch transcribe fix (PR #16), Rol 6 Share-to-Seal canlı (PR #17). Ses + foto zincirde mühürlendi, hash eşleşmesi teyit edildi — detay `docs/TASK_ASSIGNMENTS.md`.)
+Durum: `[x]` bitti · `[~]` kısmen · `[ ]` yapılmadı. (27 Kas güncellemesi: **MVP uçtan uca bağlandı ve devnet'te bağımsız doğrulandı** — kaydet→mühürle→doğrula tam akış gerçek ekranlarla çalışıyor (PR #14), backend app'e eklendi (PR #15), New Arch transcribe fix (PR #16), Rol 6 Share-to-Seal canlı (PR #17). Ses + foto zincirde mühürlendi, hash eşleşmesi teyit edildi — detay `docs/internal/TASK_ASSIGNMENTS.md`.)
 
 ## Hazırlık 1 (25 Kas, Çarşamba)
 

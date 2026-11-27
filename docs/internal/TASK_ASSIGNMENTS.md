@@ -1,10 +1,10 @@
 # Witness — Görev Dağılımı (5 kişi, rol eşlemesi)
 
-_`docs/TASK_BOARD.md` değişmedi; tek doğruluk kaynağı ve görev/öncelik listesi olarak aynen kalıyor. Bu dosya, panodaki rolleri gerçek kişi sayısına göre eşleyip kişi bazlı yürütme planlarına ayırıyor._
+_`docs/internal/TASK_BOARD.md` değişmedi; tek doğruluk kaynağı ve görev/öncelik listesi olarak aynen kalıyor. Bu dosya, panodaki rolleri gerçek kişi sayısına göre eşleyip kişi bazlı yürütme planlarına ayırıyor._
 
 ## Neden
 
-Ekip 5 kişi ama `docs/TASK_BOARD.md` görevleri 5 role 1:1 eşliyor (her role bir kişi). Gerçek dağılım farklı: **2 kişi Rol 1 (Mobil UI)**'de, **1 kişi Rol 4 (Web doğrulama)**'da, **1 kişi Rol 5 (Backend + kaptan)**'da, **1 kişi Rol 2 (Cüzdan + entegrasyon) ve Rol 3 (Solana programı)**'nı birlikte üstleniyor. Rol 1'in 2 kişiye bölünmesinde ekrana göre bölüşüm seçildi: Kişi A MVP ekranlarının ikisini (Kayıt + Mühürleme durumu), Kişi B kalan ekranları (Cüzdan bağla + ekstra ekranlar) alıyor.
+Ekip 5 kişi ama `docs/internal/TASK_BOARD.md` görevleri 5 role 1:1 eşliyor (her role bir kişi). Gerçek dağılım farklı: **2 kişi Rol 1 (Mobil UI)**'de, **1 kişi Rol 4 (Web doğrulama)**'da, **1 kişi Rol 5 (Backend + kaptan)**'da, **1 kişi Rol 2 (Cüzdan + entegrasyon) ve Rol 3 (Solana programı)**'nı birlikte üstleniyor. Rol 1'in 2 kişiye bölünmesinde ekrana göre bölüşüm seçildi: Kişi A MVP ekranlarının ikisini (Kayıt + Mühürleme durumu), Kişi B kalan ekranları (Cüzdan bağla + ekstra ekranlar) alıyor.
 
 Türkiye'de local track olduğu teyit edildi.
 
