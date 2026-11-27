@@ -8,11 +8,11 @@ Ekip 5 kişi ama `docs/GOREV_PANOSU.md` görevleri 5 role 1:1 eşliyor (her role
 
 Türkiye'de local track olduğu teyit edildi.
 
-**Rol 6 (Katman 1 — Paylaş-menüsü mühürleme UI)** ayrı bir kişi değil; Rol 2+3'ü üstlenen kişinin, **ana UI geldikten sonra** yapacağı ek bir iş hattı. Fonksiyonel iskeleti bitti (devnet'te kanıtlı), kalan gerçek UI işi aşağıda Rol 6 planında.
+**Rol 6 (Katman 1 — Paylaş-menüsü mühürleme UI)** ayrı bir kişi değil; Rol 2+3'ü üstlenen kişinin ek iş hattı. **27 Kas'ta tamamlandı ve main'e merge edildi (PR #17):** paylaşılan medya artık ana UI'ın mühürleme hattına (`/seal`) akıyor, emülatörde devnet'te kanıtlandı. Kalan birkaç minor polish aşağıda Rol 6 planında.
 
-## İlerleme durumu (2026-11-26)
+## İlerleme durumu (2026-11-27)
 
-Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı. 26 Kas'ta ilk gerçek UI ekranları (Kayıt, Cüzdan bağla) ve Supabase'in her dosya türü desteği main'e merge edildi.
+Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlarının çoğu bitti; en riskli adım (İLK İŞ) kanıtlandı. 26 Kas'ta ilk gerçek UI ekranları (Kayıt, Cüzdan bağla) ve Supabase'in her dosya türü desteği main'e merge edildi. **27 Kas'ta MVP uçtan uca bağlandı (PR #14), backend app'e eklendi (PR #15), New Arch transcribe fix (PR #16) ve Rol 6 Share-to-Seal (PR #17) merge edildi; tüm akış emülatörde baştan sona devnet'te kanıtlandı — ses + foto mühürlendi, bağımsız doğrulandı.**
 
 | Durum | İş | Not |
 | --- | --- | --- |
@@ -32,6 +32,11 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | **Rol 5 — Supabase her dosya türü desteği (PR #6)** | `mime_type` kolonu + `transcript_status='skipped'`. `register` opsiyonel `mime_type` alıyor, ses/video değilse transkript atlanıyor; `transcribe` ses/video dışını reddediyor (dosyanın ilk baytlarından magic-number sniff). Katman 1 artık foto/video/belge de mühürleyebilir; doğrulama sayfası çözülen dosyayı türe göre gösterir |
 | ✅ | **Rol 1 / Kişi B — Cüzdan bağla ekranı (PR #7 + #8)** | `WalletScreen`: bağla butonu, kısa adres, devnet etiketi, SOL bakiyesi, düşük bakiyede faucet uyarısı. `/wallet` route'u + ana ekran butonuyla navigasyona bağlandı (#8). Fix: `account.address` runtime'da string gelebildiği için `getBalance`'tan önce `PublicKey`'e normalize edildi. Saf `WalletView` + bağlı-parça ayrımı; mock'lanabilir |
 | ✅ | **Rol 1 / Kişi A — Kayıt ekranı UI (PR #9)** | `RecordScreen` 4 durum (idle / recording / captured / permission-denied), props + callback'lerle sürülen **saf UI** (`@expo/vector-icons`, `eas.json` eklendi). Kalan: gerçek ses kaydı/m4a çıktısı modülünü props'a bağlamak ve navigasyona (route) eklemek. Şu an `app/src/screens/` altında — ileride `features/` konvansiyonuna taşınabilir |
+| ✅ | **Rol 1 — Mühürleme akışı uçtan uca bağlandı (PR #14)** | `record.tsx` → `/seal` (`use-seal.ts`: SHA-256 → bakiye kontrolü → MWA onay → `register_recording` → Sealed) → `recordings.tsx` (My Recordings). Kaydet→mühürle→doğrula tam akış gerçek ekranlarla çalışıyor |
+| ✅ | **Rol 5 — Backend app'e bağlandı (PR #15)** | Mühür zincirde onaylanınca **arka planda** `register` (Supabase, zincirden doğrular) + `transcribe` (ElevenLabs); transkript mühür ekranında/My Recordings'te kendiliğinden görünür, mühürlemeyi bekletmez |
+| ✅ | **Transcribe upload — New Arch fix (PR #16)** | Fabric açıkken `fetch`+`FormData` dosya upload "Unsupported FormDataPart" verip transkripti hep bozuyordu → `expo-file-system` native `uploadAsync` (legacy). Transkript artık uçtan uca çalışıyor; emülatörde kanıtlandı (sessiz seste ElevenLabs "[konuşma sesi]" döndü = doğru davranış) |
+| ✅ | **Rol 6 — Share-to-Seal canlı UI'a bağlandı (PR #17)** | `ShareIntentHandler` (_layout): paylaşılan medya → kalıcı kopya + pending kayıt → `/seal` (aynı kanıtlanmış hat). Galeriden PNG paylaş → mühür → **devnet slot 526869476**, `getAccountInfo` ✅. Resim register'da `image/jpeg`, transkript atlanır; paylaşılan mühürler My Recordings'te de görünür |
+| ✅ | **MVP uçtan uca — devnet'te bağımsız kanıt** | Ses kaydı (hash `fcb7757e…`, slot 526836615) + paylaşılan foto (hash `0ac3b342…`, slot 526869476) zincirde mühürlendi; PDA'lar `getAccountInfo` ile doğrulandı, dosyalar Mac'e çekilip hash eşleşmesi teyit edildi. **Kritik MWA blokajı çözüldü:** emülatörde Phantom identity doğrulaması için APK'nın **v1 (JAR) imzası** şart — AGP `enableV1Signing`'i yok sayıyor, apksigner'ı `--min-sdk-version 21` ile zorla (detay `memory` → mwa-phantom-identity-signing) |
 
 Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `/web` artık canlı ve Kişi C bu scaffold üstüne doğrulama sayfasını ekleyebilir; `/app` scaffold'u hazır, Kişi A (Kayıt ekranı UI) ve Kişi B (Cüzdan bağla ekranı) ilk ekranlarını merge etti. İkisi de şimdilik saf UI: Kayıt ekranına ses modülü, iki ekrana da gerçek akış/navigasyon bağlama kaldı (çakışma notu için "Açık sorular").
 
@@ -161,25 +166,30 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 
 ---
 
-## Rol 6 planı: Katman 1 — Paylaş-menüsü mühürleme (Share-to-Seal) UI
+## Rol 6 planı: Katman 1 — Paylaş-menüsü mühürleme (Share-to-Seal) UI — ✅ BİTTİ (PR #17)
 
-(sahibi: ben · **ön koşul: Rol 1'in ana UI'ı, özellikle Mühürleme durumu ekranı geldikten sonra**)
+(sahibi: ben)
 
-Fonksiyonel iskelet hazır ve devnet'te kanıtlı (`feature/katman-1-share-intent`): başka bir uygulamadan paylaşılan dosya, Witness hiç açılmadan, gerçek SHA-256'sıyla zincire mühürleniyor (`expo-share-intent`, `account-feature-seal-shared.tsx`). Eksik olan **gerçek UI** — şu an dev-scaffold kartına sıkışmış durumda. Bu rol o akışı gerçek ekranlara oturtur. Ana UI geldikten sonra, Rol 1'in ekranlarını tekrar yazmadan onların üstüne kurulur.
+Fonksiyonel iskelet + gerçek UI entegrasyonu tamamlandı ve emülatörde devnet'te kanıtlandı (galeriden PNG → mühür, slot 526869476). Paylaşılan medya artık ana UI'ın mühürleme hattına akıyor; ayrı/duplicate ekran yok, Rol 1'in ekranları tekrar yazılmadı.
 
-Giriş noktası ikileşti: mühürleme artık (a) uygulama içi **Kayıt ekranı** ve (b) **dış paylaşım** olmak üzere iki yerden başlıyor; ikisi de **aynı mühürleme hattına** akmalı.
+Giriş noktası üçe çıktı ama **üçü de aynı `/seal` hattına** akıyor: (a) uygulama içi Kayıt ekranı, (b) dış paylaşım (OS paylaş menüsü), (c) uygulama içi dosya seçici ("Seal an existing file").
 
-- **Odaklı mühürleme ekranı (kart değil):** Paylaşım gelince `/seal` route'una yönlendir (expo-router); dev ana ekranına kart basma. `hasShareIntent` → dedike ekran.
-- **Phantom gidiş-dönüşünde kalıcı sonuç (en kritik):** Bugün `resetOnBackground` paylaşımı sıfırlıyor, Phantom'dan dönünce "Mühürlendi ✓" kayboluyor (işlem yine de gidiyor). Sonuç state'i (hash, imza, PDA) ekranda/kalıcı tutulmalı.
-- **Dosya önizleme — tipe göre:** foto → thumbnail; ses → oynatıcı + ad/boyut/süre. Şu an sadece ad + mime yazıyor; `mimeType`'a göre dallanan önizleme.
-- **Ortak "Mühürleme durumu" hattı:** Rol 1'in "Mühürleme durumu ekranı"nı tek merkez yap (Hash hesaplanıyor → Cüzdan onayı → Zincire yazılıyor → ✅ Mühürlendi); hem kayıt hem paylaşım ona aksın.
-- **Sonuç ekranı:** hash'in ilk 8'i, Explorer linki, "Doğrulama linkini paylaş/kopyala", "Yeni mühür".
-- **"Önce cüzdan bağla" yolu:** paylaşım geldiğinde cüzdan bağlı değilse, bağla → **kaldığın mühre dön** (bağlamı kaybetme).
-- **Hata + Tekrar dene (dostça):** "Failed to simulate", süre, ağ hataları ham string yerine anlaşılır mesaj. (Not: foto gibi süresiz dosyada `duration_ms` en az 1 gönderilmeli — program `duration_ms > 0` istiyor; `seal-shared` bunu `Math.max(1, …)` ile hallediyor.)
-- **Soğuk başlatma:** app kapalıyken paylaşımla açılırsa doğrudan mühürleme ekranına düşsün.
-- **Ekstra:** `image/*` için demo akışı (foto mühürleme), ileride Katman 4 (Seeker kamerasına gömülü capture-time imza) vizyonuna köprü.
+**Yapıldı:**
+- ✅ **Uygulama içi dosya seçici (Seal an existing file):** Kayıt ekranında (idle) buton → `expo-document-picker` (`type: '*/*'`) → seçilen dosya `addSharedRecording` ile kalıcı kopya + pending kayıt → `/seal`. Paylaş menüsüyle aynı hat; demo için paylaş-sheet'ine bağımlı değil, %100 güvenilir giriş. Süre picker'dan gelmez (0); `/seal` zincirde `Math.max(1, …)` uyguladığından sorun olmaz.
+- ✅ **Odaklı mühürleme ekranı:** `ShareIntentHandler` (`features/record/share-intent-handler.tsx`, _layout'ta her zaman mount) paylaşımı yakalar, dosyayı kalıcı klasöre **kopyalar** (`addSharedRecording`), pending kayıt oluşturur ve **`/seal`'e yönlendirir** — dev kartı yok. Hem kayıt hem paylaşım aynı `use-seal` hattına akıyor.
+- ✅ **Kalıcı sonuç:** kayıt `recordings-store`'da; Phantom dönüşünde "Evidence Sealed On-Chain" kalıcı, My Recordings'te de görünür (eski resetOnBackground sorunu yok).
+- ✅ **Tipe göre backend:** `backend-sync` kaydın `mimeType`'ını kullanıyor; resim `image/jpeg` register olur, transkript **atlanır** (ElevenLabs'e gitmez).
+- ✅ **"Önce cüzdan bağla":** paylaşım geldiğinde cüzdan bağlı değilse `/wallet`'a yönlendirir, kayıt pending kalır (sonradan mühürlenebilir).
+- ✅ **Hata + Tekrar dene:** ortak `use-seal` dostça mesajları; foto gibi süresizde `duration_ms` `Math.max(1, …)` (program `duration_ms > 0` istiyor).
+- ✅ **Soğuk başlatma:** `singleTask` + `ShareIntentProvider` ile paylaşımla açılış doğrudan mühürlemeye düşüyor.
 
-Teknik durum ve tuzaklar `memory` + `feature/katman-1-share-intent` branch'inde; sağlamlık notu: `expo-share-intent` v9 boş-metadata cursor'da çökebiliyor (gerçek paylaşımda olmuyor), gerekirse patch-package guard'ı.
+**Kalan (minor polish, demo'yu bloklamaz):**
+- [ ] Aynı dosyayı iki kez paylaşınca iki pending kayıt oluşuyor → aynı hash pending'se yeni kayıt açma (dedup).
+- [ ] Dosya önizleme: foto thumbnail / ses oynatıcı (şu an genel seal ekranı; `mimeType`'a göre dallanabilir).
+- [ ] Resimde seal/recordings ekranı "00:00 süre" gösteriyor → tipe göre gizle.
+- [ ] Eski `account-feature-seal-shared.tsx` + `/dev` kartı artık ölü kod (ShareIntentHandler intent'i önce tüketip reset ediyor) → temizlenebilir.
+
+Teknik durum ve emülatör tuzakları (v1 imza/apksigner, Private DNS, Fake Wallet'ı devre dışı bırakma, android-34→37 imaj değişimi) geliştiricinin `memory` notlarında (`mwa-phantom-identity-signing`, `katman-1-share-intent`).
 
 ---
 
