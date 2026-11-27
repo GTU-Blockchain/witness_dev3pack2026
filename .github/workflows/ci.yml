@@ -82,6 +82,8 @@ jobs:
           chmod +x "$HOME/.local/bin/anchor"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: solana --version && anchor --version
-      - run: anchor build
+      # Solana 2.1.0 defaults to platform-tools v1.43 (rustc 1.79); the program and its
+      # locked deps need rustc 1.84, which ships with platform-tools v1.48.
+      - run: anchor build -- --tools-version v1.48
       - name: Check the program was actually built
         run: test -s target/deploy/witness.so && test -s target/idl/witness.json && ls -l target/deploy/witness.so
