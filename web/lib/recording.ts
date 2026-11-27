@@ -1,5 +1,5 @@
 // 4: Recording PDA'sını türetir, okur, çözer. ✅/❌ kararı SADECE zincirdeki bu hesaba dayanır.
-// Kurallar: PDA seed'leri ["rec", hash32] (docs/TEKNIK_DOKUMAN.md → Solana programı / Okuma tarafı).
+// Kurallar: PDA seed'leri ["rec", hash32] (docs/TECHNICAL.md → Solana programı / Okuma tarafı).
 import { BorshAccountsCoder } from '@coral-xyz/anchor'
 import { Connection, PublicKey } from '@solana/web3.js'
 import idl from '@/idl/witness.json'

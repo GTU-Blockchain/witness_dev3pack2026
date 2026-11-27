@@ -1,5 +1,5 @@
 //! Witness programı: her ses hash'i için bir kez yazılabilen `Recording` PDA'sı.
-//! Kaynak: docs/TEKNIK_DOKUMAN.md → "Solana programı".
+//! Kaynak: docs/TECHNICAL.md → "Solana programı".
 //! Bilerek yok: hesap kapatma, güncelleme, admin anahtarı, attach_transcript.
 use anchor_lang::prelude::*;
 

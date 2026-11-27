@@ -1,4 +1,4 @@
-// 4: Tarayıcıda SHA-256. Hash kuralı (docs/TEKNIK_DOKUMAN.md): dosyanın son halinin
+// 4: Tarayıcıda SHA-256. Hash kuralı (docs/TECHNICAL.md): dosyanın son halinin
 // ham baytlarının SHA-256'sı, küçük harf hex (64 karakter); zincirde 32 bayt.
 // Dosya yeniden kodlanmaz, hiçbir yere gönderilmez; sadece ham baytlar okunur.
 import { sha256 } from '@noble/hashes/sha2'

@@ -48,7 +48,7 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * Bir kaydın mühürleme akışı (docs/TEKNIK_DOKUMAN.md → "Bir kaydın mühürlenme sırası"):
+ * Bir kaydın mühürleme akışı (docs/TECHNICAL.md → "Bir kaydın mühürlenme sırası"):
  * dosyanın SHA-256'sı → cüzdan onayı (MWA) → register_recording → onay.
  * Hata olursa kayıt silinmez, "pending" kalır ve tekrar denenebilir.
  */

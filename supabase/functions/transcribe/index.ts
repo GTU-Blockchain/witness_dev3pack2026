@@ -1,5 +1,5 @@
 // Edge Function: transcribe  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TEKNIK_DOKUMAN.md → "Supabase" → Edge Function'lar, "Transkript akışı"
+// Sözleşme: docs/TECHNICAL.md → "Supabase" → Edge Function'lar, "Transkript akışı"
 //
 // Girdi:  POST multipart/form-data  →  audio_hash (metin) + file (mühürlenen m4a, şifresiz)
 // Çıktı:  200 { status: "done", transcript, transcript_lang }

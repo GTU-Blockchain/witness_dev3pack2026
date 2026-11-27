@@ -1,56 +1,45 @@
-# /app: Witness mobil uygulaması
+# /app — Witness mobile app
 
-**Sahipleri:** 1 Mobil UI (ekranlar, kayıt) · 2 Cüzdan + entegrasyon (MWA, hash, işlem)
+React Native + **Expo dev build** (MWA does not work in Expo Go), started from the Solana Mobile Expo template. Handles the UI, audio recording, hashing, and hardware‑wallet signing via Mobile Wallet Adapter.
 
-Stack: React Native + **Expo dev build** (Expo Go'da MWA çalışmaz), Solana Mobile Expo şablonundan başlanır.
+## Setup
 
-## Kurulum
-
-> **Not (2026-11-25):** `/app` scaffold'u **zaten kuruldu** (Solana Mobile `expo-web3js-minimal` şablonu, `android/` prebuild'li dev build). Üzerine tekrar `create-expo-app` **çalıştırma**. Doğrudan bağımlılıkları kurup çalıştır:
+> The `/app` scaffold is **already generated** (Solana Mobile `expo-web3js-minimal` template, prebuilt `android/` dev build). **Do not** run `create-expo-app` on top of it. Install and run:
 
 ```bash
 cd app
 npm i
-npx expo run:android      # Seeker ya da emülatör (dev build; Expo Go değil)
+npx expo run:android      # Seeker or emulator (dev build, NOT Expo Go)
 ```
 
-Paketler: `@solana-mobile/mobile-wallet-adapter-protocol-web3js`, `@solana/web3.js`, `@coral-xyz/anchor`, `expo-crypto` (veya `react-native-quick-crypto`), `expo-av` / `expo-audio`.
+Key packages: `@solana-mobile/mobile-wallet-adapter-protocol-web3js`, `@solana/web3.js`, `@coral-xyz/anchor`, `expo-crypto` / `react-native-quick-crypto`, `expo-audio`, `expo-share-intent`, `expo-document-picker`.
 
-### MWA dApp identity (assetlinks + autoVerify) — bozmayın
+### MWA dApp identity (assetlinks + autoVerify) — do not break
 
-Phantom gibi cüzdanlar MWA'da dApp'in kimliğini Android App Links ile doğrular. Bunun çalışması için üç şey birbiriyle **tutarlı** olmalı:
+Wallets like Phantom verify the dApp's identity over MWA using Android App Links. Three things must stay **consistent**:
 
 1. `app/constants/app-config.ts` → `uri = 'https://web-pi-cyan-30.vercel.app'`
-2. O domainin kökünde `/.well-known/assetlinks.json` (paket `com.anonymous.app` + imza SHA-256 parmak izi) — `/web` deploy'undan servis edilir
-3. `AndroidManifest.xml` / `app.json` → o host için `autoVerify="true"` intent-filter (prebuild'de üretilir)
+2. `/.well-known/assetlinks.json` at that domain's root (package `com.anonymous.app` + signing SHA‑256 fingerprint), served by the `/web` deploy
+3. An `autoVerify="true"` intent‑filter for that host in `AndroidManifest.xml` / `app.json` (generated at prebuild)
 
-Üçünden biri değişir/kaldırılırsa cüzdan "identity could not be verified" der ve imzayı reddeder. Manifest değişikliği JS reload ile gelmez — native rebuild (`expo run:android`) gerekir.
+If any of the three changes, the wallet reports "identity could not be verified" and rejects signing. Manifest changes do **not** arrive via JS reload — a native rebuild (`expo run:android`) is required.
 
-## Ekranlar
+> **Adding a native module?** On a prebuilt dev build, Gradle caches the settings‑phase module list in `android/.gradle`. `./gradlew clean` does **not** clear it. If a newly installed native module (e.g. `expo-document-picker`) is "Cannot find native module", delete `android/.gradle` and rebuild to force a fresh autolinking resolve.
 
-| Ekran | MVP |
+## Screens
+
+| Screen | MVP |
 | --- | --- |
-| 1. Cüzdan bağla (adres, devnet etiketi, bakiye, faucet uyarısı) | Evet |
-| 2. Kayıt (kaydet/durdur, süre, seviye, dinle, Mühürle/Sil, konum anahtarı varsayılan kapalı) | Evet |
-| 3. Mühürleme durumu (Hash → Cüzdan onayı → Zincire yazılıyor → ✅, Explorer linki, hata + Tekrar dene) | Evet |
-| 4. Kayıt listesi | Ekstra |
-| 5. Kayıt detayı | Ekstra |
+| Connect wallet (address, devnet badge, SOL balance, faucet hint) | Yes |
+| Record (record/stop, timer, level meter, playback, Seal/Delete, location toggle — off by default) | Yes |
+| Seal status (Hash → Wallet approval → Writing to chain → ✅, Explorer link, error + Retry) | Yes |
+| My Recordings (list) · Recording detail | Extra |
 
-## Kurallar
+## Rules
 
-- Ses: m4a (AAC), mono, 44.1 kHz
-- Mühürlenen dosya asla yeniden kodlanmaz; oynatma ve paylaşım aynı baytları kullanır
-- Zincire yazma başarısızsa kayıt silinmez, "Bekliyor" kalır
-- `authorize({ cluster: "devnet", identity: { name: "Witness", ... } })`, `auth_token` saklanır, sonrası `reauthorize`
-- Her kayıt için ayrı cüzdan onayı
-- Konum zincire sadece commitment olarak: `sha256(lat_e5 | lon_e5 | 16 bayt salt)`
-
-## Görevler
-
-| Tarih | 1 Mobil UI | 2 Cüzdan + entegrasyon |
-| --- | --- | --- |
-| 25 Kas | Kayıt ekranı, m4a çıktısı (22:00) | **İlk iş:** MWA ile Memo işlemi (18:00), SHA-256 (20:00) |
-| 26 Kas | Cüzdan bağla + Mühürleme durumu (18:00) | IDL'dan `register_recording`, PDA okuma (15:00) |
-| 27 Kas | Kayıt listesi + transkript | Genesis rozeti, `register` çağrısı |
-| 28 Kas | Kayıt detayı, UI cilası | AES-256-GCM şifreleme + yükleme, konum commitment |
-| 29 Kas | Demo ekran kaydı (scrcpy) | Son APK |
+- Audio: m4a (AAC), mono, 44.1 kHz.
+- A sealed file is **never** re‑encoded; playback and sharing use the same bytes.
+- If writing to chain fails, the recording is not deleted — it stays "pending" and can be retried.
+- `authorize({ cluster: "devnet", identity: { name: "Witness", ... } })`; the `auth_token` is cached, later seals use `reauthorize`.
+- Separate wallet approval for every seal — each seal is a conscious consent.
+- Location goes on chain only as a commitment: `sha256(lat_e5 | lon_e5 | 16-byte salt)`.

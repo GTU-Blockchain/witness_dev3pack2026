@@ -2,7 +2,7 @@
 
 Kullanım:
 
-1. `TEKNIK_DOKUMAN.md` ve `GOREV_PANOSU.md` dosyalarını repo'da `docs/` klasörüne koy.
+1. `TECHNICAL.md` ve `TASK_BOARD.md` dosyalarını repo'da `docs/` klasörüne koy.
 2. Claude Code'u repo kökünde aç, **plan moduna geç (Shift+Tab ile "plan mode")** ya da varsa plan skill'ini çağır.
 3. Aşağıdaki prompt'u yapıştır. `<ROL>` kısmını kendi rolünle değiştir: `1 Mobil UI`, `2 Cüzdan + entegrasyon`, `3 Solana programı`, `4 Web doğrulama`, `5 Backend + kaptan` ya da tüm repo iskeleti için `Herkes`.
 
@@ -12,8 +12,8 @@ Kullanım:
 Plan modundasın; plan onaylanmadan hiçbir dosya yazma, komut çalıştırma.
 
 Bağlam:
-- @docs/TEKNIK_DOKUMAN.md projenin tek doğruluk kaynağı: mimari, Recording hesap yapısı, MWA akışı, hash/şifreleme kuralları, Supabase şeması, doğrulama sayfası, ortak kurallar.
-- @docs/GOREV_PANOSU.md görev listesi ve tarihler (25–29 Kasım 2026, İstanbul saati).
+- @docs/TECHNICAL.md projenin tek doğruluk kaynağı: mimari, Recording hesap yapısı, MWA akışı, hash/şifreleme kuralları, Supabase şeması, doğrulama sayfası, ortak kurallar.
+- @docs/TASK_BOARD.md görev listesi ve tarihler (25–29 Kasım 2026, İstanbul saati).
 - Proje: Witness. Seeker'da ses kaydı → SHA-256 → Seed Vault ile imzalanıp Solana devnet'e yazılır → web sayfası dosyayı tarayıcıda hash'leyip zincirle karşılaştırır.
 - Repo yapısı: /app (React Native + Expo dev build), /program (Anchor), /web (Next.js), /supabase (SQL + Edge Functions), /docs.
 
@@ -21,7 +21,7 @@ Benim rolüm: <ROL>
 
 İstediğim plan:
 1. Önce repo'yu incele: hangi klasörler ve dosyalar zaten var, neler eksik. Var olan bir şeyi tekrar kurmayı planlama.
-2. GOREV_PANOSU.md'de benim rolüme ait görevleri tarih sırasıyla çıkar. "MVP" ve "Hedef" görevleri önce gelsin; "Ekstra" görevleri ayrı bir bölümde, MVP bitince yapılacak şekilde listele.
+2. TASK_BOARD.md'de benim rolüme ait görevleri tarih sırasıyla çıkar. "MVP" ve "Hedef" görevleri önce gelsin; "Ekstra" görevleri ayrı bir bölümde, MVP bitince yapılacak şekilde listele.
 3. Her görev için:
    - Oluşturulacak / değiştirilecek dosyaların tam yolları
    - Kullanılacak paketler ve sürümleri (dokümandakilerle uyumlu)
