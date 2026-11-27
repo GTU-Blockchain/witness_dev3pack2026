@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: web (build + typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx tsc --noEmit
+
+  app:
+    name: app (typecheck + lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      # app/package-lock.json is written by npm 11; npm 10 (bundled with Node 20) rejects it.
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npx tsc --noEmit
+      # `npm run lint` is `expo lint --fix`; CI checks without rewriting files.
+      - run: npx expo lint
+
+  program:
+    name: program (anchor build)
+    runs-on: ubuntu-latest
+    env:
+      # 2.3.x ships platform-tools v1.48 (rustc 1.84), which the program and its locked
+      # deps need. Solana 2.1's default v1.43 (rustc 1.79) is too old.
+      SOLANA_VERSION: 2.3.0
+      ANCHOR_VERSION: 0.31.1
+    defaults:
+      run:
+        working-directory: program
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/solana
+            ~/.local/share/solana/install
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: program-${{ runner.os }}-solana${{ env.SOLANA_VERSION }}-${{ hashFiles('program/Cargo.lock') }}
+          restore-keys: program-${{ runner.os }}-solana${{ env.SOLANA_VERSION }}-
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${SOLANA_VERSION}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      # Official release binary. The npm package @coral-xyz/anchor-cli@0.31.1 is marked
+      # "broken cli build" and exits 0 without building anything.
+      - name: Install Anchor CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL -o "$HOME/.local/bin/anchor" \
+            "https://github.com/solana-foundation/anchor/releases/download/v${ANCHOR_VERSION}/anchor-${ANCHOR_VERSION}-x86_64-unknown-linux-gnu"
+          chmod +x "$HOME/.local/bin/anchor"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: solana --version && anchor --version
+      # cargo-build-sbf unwraps read_dir(~/.cache/solana) and panics if it doesn't exist yet,
+      # which is the case on a fresh runner with a cold cache.
+      - run: mkdir -p ~/.cache/solana && anchor build
+      - name: Check the program was actually built
+        run: test -s target/deploy/witness.so && test -s target/idl/witness.json && ls -l target/deploy/witness.so
