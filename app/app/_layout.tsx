@@ -12,9 +12,12 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="wallet" options={{ headerShown: false }} />
           <Stack.Screen name="record" options={{ headerShown: false }} />
+          <Stack.Screen name="seal" options={{ headerShown: false }} />
+          <Stack.Screen name="recordings" options={{ headerShown: false }} />
           <Stack.Screen name="dev" options={{ headerShown: false }} />
         </Stack>
-        <StatusBar style="auto" />
+        {/* Koyu temada saat / pil / wi-fi ikonları açık renk olsun */}
+        <StatusBar style="light" />
       </AppProviders>
     </ShareIntentProvider>
   )
