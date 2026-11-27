@@ -9,15 +9,15 @@ export default function Home() {
           <h1>Witness</h1>
         </div>
         <p>
-          Bir dosyanın mühürlendikten sonra değiştirilmediğini doğrulayın. Parmak izi tarayıcınızda hesaplanır,
-          dosya hiçbir yere gönderilmez.
+          Verify that a file hasn&apos;t been altered since it was sealed. The fingerprint is computed in your
+          browser — the file is never uploaded anywhere.
         </p>
       </header>
 
       <Verifier />
 
       <p className="foot">
-        Bu sayfa içeriğin <b>doğru</b> olduğunu değil, mühürlendikten sonra <b>değiştirilmediğini</b> kanıtlar.
+        This page proves the content was not <b>altered</b> after sealing — not that it is <b>true</b>.
       </p>
     </div>
   )

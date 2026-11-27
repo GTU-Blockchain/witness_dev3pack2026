@@ -40,31 +40,31 @@ export function DetailsModal({
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
         <div className="m-head">
-          <h3 id="m-title">Doğrulama detayları</h3>
-          <button className="close" aria-label="Kapat" onClick={onClose}>
+          <h3 id="m-title">Verification details</h3>
+          <button className="close" aria-label="Close" onClick={onClose}>
             ✕
           </button>
         </div>
         <dl>
-          <Row label="Dosya">{fileName}</Row>
-          <Row label="SHA-256 (hesaplanan)" mono>
+          <Row label="File">{fileName}</Row>
+          <Row label="SHA-256 (computed)" mono>
             {hash}
           </Row>
           {rec ? (
             <>
-              <Row label="Zincirdeki SHA-256" mono>
-                {rec.audioHash} <span className="tag">eşleşti</span>
+              <Row label="SHA-256 on chain" mono>
+                {rec.audioHash} <span className="tag">match</span>
               </Row>
-              <Row label="En geç şu anda vardı (zincir)">
+              <Row label="Existed no later than (chain)">
                 <b>{formatIstanbul(rec.anchoredAt)}</b>
               </Row>
-              <Row label="Cihaz saati (beyan)">{formatIstanbul(rec.recordedAt)}</Row>
-              <Row label="İmzalayan cüzdan" mono>
+              <Row label="Device time (claimed)">{formatIstanbul(rec.recordedAt)}</Row>
+              <Row label="Signing wallet" mono>
                 <a href={explorerAddress(rec.authority)} target="_blank" rel="noreferrer">
                   {shortAddress(rec.authority)}
                 </a>
               </Row>
-              <Row label="Mühür işlemi" mono>
+              <Row label="Seal transaction" mono>
                 {sig ? (
                   <a href={explorerTx(sig)} target="_blank" rel="noreferrer">
                     {shortAddress(sig)}
@@ -73,36 +73,36 @@ export function DetailsModal({
                   '…'
                 )}
               </Row>
-              <Row label="Kayıt hesabı (PDA)" mono>
+              <Row label="Record account (PDA)" mono>
                 <a href={explorerAddress(rec.pda)} target="_blank" rel="noreferrer">
                   {shortAddress(rec.pda)}
                 </a>
               </Row>
-              {shouldShowDuration(fileType, rec.durationMs) && <Row label="Süre">{formatDuration(rec.durationMs)}</Row>}
-              <Row label="Konum taahhüdü">
+              {shouldShowDuration(fileType, rec.durationMs) && <Row label="Duration">{formatDuration(rec.durationMs)}</Row>}
+              <Row label="Location commitment">
                 {rec.hasLocationCommitment ? (
                   <>
-                    var <span className="tag">gizli</span>
+                    present <span className="tag">private</span>
                   </>
                 ) : (
                   <>
-                    — <span className="tag">yok</span>
+                    — <span className="tag">none</span>
                   </>
                 )}
               </Row>
-              <Row label="Ağ">Solana devnet</Row>
+              <Row label="Network">Solana devnet</Row>
             </>
           ) : (
-            <Row label="Zincir kaydı">
+            <Row label="On-chain record">
               {result.status === 'invalid'
                 ? result.reason
-                : 'Bu parmak izine ait bir mühür bulunamadı. Dosya hiç mühürlenmemiş ya da mühürlendikten sonra değiştirilmiş.'}
+                : 'No seal found for this fingerprint. The file was never sealed, or was modified after sealing.'}
             </Row>
           )}
         </dl>
         <p className="note">
-          Zincir zamanı asıl kanıttır (“en geç şu anda vardı”); cihaz saati imzalayanın beyanıdır. Konum yalnızca
-          gizli taahhüt olarak tutulur, açık koordinat saklanmaz.
+          The chain time is the real proof (“existed no later than”); the device time is the signer&apos;s claim.
+          Location is kept only as a private commitment — raw coordinates are never stored.
         </p>
       </div>
     </div>

@@ -17,7 +17,7 @@ export function Verifier() {
 
   async function verify(file: File) {
     const fileName = file.name
-    setState({ phase: 'working', fileName, step: 'Parmak izi hesaplanıyor…' })
+    setState({ phase: 'working', fileName, step: 'Computing fingerprint…' })
     try {
       // Büyük dosyada parça parça hash'lenir; ilerleme yüzde olarak gösterilir (web/README.md → Büyük dosyalar)
       let lastPct = -1
@@ -25,9 +25,9 @@ export function Verifier() {
         const pct = Math.floor(f * 100)
         if (pct === lastPct) return
         lastPct = pct
-        setState({ phase: 'working', fileName, step: `Parmak izi hesaplanıyor… %${pct}` })
+        setState({ phase: 'working', fileName, step: `Computing fingerprint… ${pct}%` })
       })
-      setState({ phase: 'working', fileName, hash, step: 'Zincir kaydı okunuyor…' })
+      setState({ phase: 'working', fileName, hash, step: 'Reading the on-chain record…' })
       const result = await lookupRecording(hash)
       setState({ phase: 'done', fileName, hash, result, file })
     } catch (e) {
@@ -48,7 +48,7 @@ export function Verifier() {
 
       {state.phase === 'error' && (
         <div className="working">
-          Doğrulama tamamlanamadı (ağ hatası olabilir): {state.message}. Lütfen tekrar deneyin.
+          Verification could not complete (possibly a network error): {state.message}. Please try again.
         </div>
       )}
 
