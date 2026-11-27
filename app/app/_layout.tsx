@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
 import { ShareIntentProvider } from 'expo-share-intent'
 import { AppProviders } from '@/components/app-providers'
+import { ShareIntentHandler } from '@/features/record/share-intent-handler'
 
 export default function RootLayout() {
   return (
@@ -16,6 +17,8 @@ export default function RootLayout() {
           <Stack.Screen name="recordings" options={{ headerShown: false }} />
           <Stack.Screen name="dev" options={{ headerShown: false }} />
         </Stack>
+        {/* Rol 6: paylaşılan medyayı yakalayıp /seal'e yönlendirir (görünmez) */}
+        <ShareIntentHandler />
         {/* Koyu temada saat / pil / wi-fi ikonları açık renk olsun */}
         <StatusBar style="light" />
       </AppProviders>

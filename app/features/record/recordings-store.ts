@@ -10,6 +10,9 @@ import type { RecordingItem } from '@/src/screens/RecordingsScreen'
 export type StoredRecording = RecordingItem & {
   /** Ses dosyasının yolu (file://...). */
   uri: string
+  /** MIME türü (ör. "audio/mp4", "image/jpeg"). Paylaşılan dosyalar için set edilir;
+   *  uygulama içi kayıtlar her zaman m4a olduğundan boş bırakılır (backend-sync fallback eder). */
+  mimeType?: string
   signature?: string
   slot?: number
   /** Mühürleyen cüzdan (base58); Supabase'e register için. */
@@ -62,6 +65,34 @@ export function addRecording(tempUri: string, durationMillis: number, locationEn
     status: 'pending',
     locationEnabled,
     uri: dest.uri,
+  }
+  save([item, ...recordings])
+  return item
+}
+
+/** Rol 6 — başka uygulamadan paylaşılan dosyayı (ses/resim) listeye "pending" ekler.
+ *  Dosyayı kalıcı klasöre KOPYALAR (taşımaz; kaynak başka uygulamanın/cache'in olabilir).
+ *  Baytlar değişmez; dosya asla yeniden kodlanmaz. Sonrası normal kayıtla aynı: /seal hattı. */
+export function addSharedRecording(
+  sourceUri: string,
+  fileName: string,
+  mimeType: string,
+  durationMillis: number,
+): StoredRecording {
+  if (!dir.exists) dir.create({ intermediates: true, idempotent: true })
+  const now = Date.now()
+  const source = new File(sourceUri)
+  const safeName = fileName?.trim() || source.name || `shared-${now}`
+  const dest = new File(dir, `${now}-${safeName}`)
+  source.copy(dest)
+  const item: StoredRecording = {
+    id: `${now}`,
+    recordedAt: now,
+    durationMillis,
+    status: 'pending',
+    locationEnabled: false,
+    uri: dest.uri,
+    mimeType,
   }
   save([item, ...recordings])
   return item

@@ -5,8 +5,8 @@ import { isTranscribable, registerRecording, transcribeRecording } from '@/utils
 // Mühürleme akışını hiç bekletmez: çağıran `void syncRecordingToBackend(id)` der ve devam eder.
 // Hata olursa sessizce kalır; kayıt ekranı tekrar açıldığında yeniden denenir. Kanıt zincirde, kaybolmaz.
 
-// Uygulama içi kayıtlar her zaman m4a (AAC). Paylaşılan dosyalar için ileride kayda mimeType eklenebilir.
-const RECORDING_MIME = 'audio/mp4'
+// Uygulama içi kayıtlar her zaman m4a (AAC); paylaşılan dosyalarda (Rol 6) kaydın mimeType'ı kullanılır.
+const DEFAULT_MIME = 'audio/mp4'
 
 const inFlight = new Set<string>()
 
@@ -22,24 +22,26 @@ export async function syncRecordingToBackend(id: string): Promise<void> {
   inFlight.add(id)
   try {
     const rec = getRecording(id)!
+    const mime = rec.mimeType ?? DEFAULT_MIME
 
     if (!rec.backendSynced) {
       await registerRecording({
         hash: rec.hash!,
         signature: rec.signature!,
         wallet: rec.wallet!,
-        mimeType: RECORDING_MIME,
+        mimeType: mime,
       })
       updateRecording(id, { backendSynced: true })
     }
 
-    if (!isTranscribable(RECORDING_MIME)) {
+    if (!isTranscribable(mime)) {
+      // Resim/belge vb.: transkript yok, register yeterli.
       updateRecording(id, { transcriptStatus: 'skipped' })
       return
     }
     updateRecording(id, { transcriptStatus: 'pending' })
     try {
-      const { transcript, lang } = await transcribeRecording(rec.hash!, rec.uri, RECORDING_MIME)
+      const { transcript, lang } = await transcribeRecording(rec.hash!, rec.uri, mime)
       updateRecording(id, { transcript: transcript ?? undefined, transcriptLang: lang, transcriptStatus: 'done' })
     } catch (e) {
       // 'failed': ekranda "transkript yok" görünür; bir sonraki açılışta tekrar denenmez (ElevenLabs ücreti).
