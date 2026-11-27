@@ -131,13 +131,14 @@ Not implemented yet. Each item moves to [Built today](#built-today) only when it
 ## Cost
 
 Each seal creates one `Recording` account of `Recording::SPACE` = **126 bytes**
-([`lib.rs`](program/programs/witness/src/lib.rs)) and sends one transaction with one signature. The app adds
-no priority fee itself, but the wallet may: Phantom adds a compute-budget instruction.
+([`lib.rs`](program/programs/witness/src/lib.rs)) and sends one transaction with one signature.
 
 | | Per capture | How it was computed |
 | --- | --- | --- |
-| **Per seal today** (one account + one tx) | **≈ 0.0013–0.0014 SOL** | Rent-exempt deposit 0.00129032 SOL (`solana rent 126`) + network fee: 0.000005 SOL minimum (5,000 lamports × 1 signature); 0.00008 SOL as actually charged through Phantom on devnet (tx [`4kJ7…nctm`](https://explorer.solana.com/tx/4kJ7nzLYtLuzH41nhiTS6tuB2NR4i31xCuHc7a3fMj2sz7Vnq7ETcPwwG6yzr9QRkMNs9jFpPm8W45vz39T3nctm?cluster=devnet), 2026-11-28) |
-| **With Merkle rollup** (roadmap): one tx per batch of *N* | ≈ (network fee + one root account's rent) / *N* | Not built. If the root account were also 126 bytes, *N* = 1,000 would come to ≈ 0.0000014 SOL per capture even at Phantom's fee |
+| **Rent deposit** (one account) | **0.00129032 SOL** (1,290,320 lamports) | (126 + 128 bytes of account overhead) × 5,080 lamports/byte‑year × exemption threshold 1.0, from the live Rent sysvar. Matches `solana rent 126` and the lamports held by a real seal's PDA |
+| **Network fee** (one tx) | 5,000-lamport base fee + wallet-set priority fee (**80,000 lamports total** in our Phantom test, [tx `4kJ7…nctm`](https://explorer.solana.com/tx/4kJ7nzLYtLuzH41nhiTS6tuB2NR4i31xCuHc7a3fMj2sz7Vnq7ETcPwwG6yzr9QRkMNs9jFpPm8W45vz39T3nctm?cluster=devnet)) | The app sets no priority fee; Phantom adds a compute-budget instruction |
+| **Per seal today** | **≈ 0.00137 SOL** with Phantom (≈ 0.001295 SOL at the bare base fee) | Rent + network fee |
+| **With Merkle rollup** (roadmap): one tx per batch of *N* | ≈ (network fee + one root account's rent) / *N* | Not built. If the root account were also 126 bytes, *N* = 1,000 would come to ≈ 0.0000014 SOL per capture |
 
 The rent deposit is the bulk of the cost. It is locked, not burned: the program has no `close` instruction on
 purpose (a proof must not be deletable), so it is never refunded. Devnet SOL is free; rent and the base fee are
