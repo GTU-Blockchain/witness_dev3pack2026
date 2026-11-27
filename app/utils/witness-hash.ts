@@ -28,8 +28,3 @@ export async function sha256HexOfFile(uri: string): Promise<string> {
   const buffer = await new File(uri).arrayBuffer()
   return sha256HexOfBytes(new Uint8Array(buffer))
 }
-
-/** Memo yedeği metni: `witness:v1:<hash hex>` (docs/TECHNICAL.md → Memo yedeği). */
-export function witnessMemo(hashHex: string): string {
-  return `witness:v1:${hashHex}`
-}

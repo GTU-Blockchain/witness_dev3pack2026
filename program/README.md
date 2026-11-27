@@ -1,6 +1,6 @@
 # /program — Witness Anchor program
 
-The program's only job: open a typed, write‑once record account for each file hash that is discoverable *from the hash alone*. Written in Anchor, running on devnet. Proof is possible without the program (the Memo fallback); the program adds three things on top: verification **from the file alone**, protection against sealing the same hash twice, and typed on‑chain data.
+The program's only job: open a typed, write‑once record account for each file hash that is discoverable *from the hash alone*. Written in Anchor, running on devnet. It gives verification **from the file alone**, protection against sealing the same hash twice, and typed on‑chain data.
 
 **Program ID (devnet):** `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`
 
@@ -44,7 +44,3 @@ pub struct Recording {
 ## Deliberately omitted
 
 No account close (proof can't be deleted), no update instruction (immutability), no admin key, no `attach_transcript`. Upgrade authority stays with the team on devnet; on mainnet the program would be made immutable.
-
-## Memo fallback
-
-If the program is ever unavailable, the app sends an SPL Memo with text `witness:v1:<hash hex>` and the web page verifies via `?tx=<signature>`. Spec: [`../docs/MEMO_FALLBACK.md`](../docs/MEMO_FALLBACK.md).

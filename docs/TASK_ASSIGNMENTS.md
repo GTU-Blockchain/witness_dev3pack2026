@@ -24,7 +24,7 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | Phantom in-app imza | `witness:v1:0000…` memo'su Phantom ile imzalanıp devnet'te **finalized** (tx `246bvDWt…F4iYn`) |
 | ✅ | Anchor testleri (4 senaryo) | `program/tests/witness.ts` localnet'te geçti (geçerli kayıt / çift hash / duration 0 / location) |
 | ✅ | SHA-256 hash util | `app/utils/witness-hash.ts` (expo-crypto), `shasum -a 256` ile doğrulandı |
-| ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_FALLBACK.md` (Rol 4 bunu uygular) |
+| — | Memo yedeği `?tx=` | Tasarlandı ama uygulanmadı; program sorunsuz deploy olduğu için gerek kalmadı. İlk gün MWA imza testi (SPL Memo) yapıldı, sonra kaldırıldı. |
 | ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
 | ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
 | ✅ | **Katman 1 — Paylaş-menüsü mühürleme (fonksiyonel iskelet)** | `feature/katman-1-share-intent` branch'i; galeriden gerçek foto → Paylaş → Witness → gerçek SHA-256 → register → devnet'te finalized (tx `3GxqbH92…CSHN`, hash `a2aac7fa…fab24`). UI şu an dev-scaffold kartı; gerçek UI **Rol 6** (bkz. aşağı) |

@@ -71,7 +71,7 @@ Stack: React Native + Expo **dev build** (MWA does not work in Expo Go), Solana 
 
 ## Solana program
 
-Written in Anchor, running on devnet. Proof is possible without the program (Memo), but the program adds: verification from the file alone, no double‑sealing of the same hash, and typed data.
+Written in Anchor, running on devnet. The program gives verification from the file alone, no double‑sealing of the same hash, and typed on‑chain data.
 
 **Account `Recording`**, seeds `["rec", audio_hash]`:
 
@@ -96,8 +96,6 @@ pub struct Recording {
 **Read side:** derive the PDA with `findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`. No account → "not sealed"; present → decode with the Anchor coder.
 
 **Deliberately omitted:** account close (proof can't be deleted), update instruction (immutability), admin key. Upgrade authority stays with the team on devnet; on mainnet the program would be immutable.
-
-**Memo fallback (SPL Memo):** if the program is ever unavailable, the app sends a Memo tx with text `witness:v1:<hash hex>`. Verification then needs the tx signature; the hash → signature mapping is kept by Supabase and added to the share link as `?tx=`. Full spec: [`MEMO_FALLBACK.md`](MEMO_FALLBACK.md).
 
 ## Wallet integration (MWA + hardware wallet)
 
@@ -206,8 +204,6 @@ flowchart TD
 
 **Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link + Seeker badge; duration, tx link, transcript. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
 
-**Memo fallback:** `/v/<hash>?tx=<signature>` → the page reads the memo text via `getTransaction`, compares the hash, and uses `blockTime` for the timestamp.
-
 ## Interface contracts
 
 | Topic | Rule |
@@ -217,8 +213,7 @@ flowchart TD
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` |
 | Package versions | `@coral-xyz/anchor` **0.31.x** (app + web, to read the program's IDL), `@solana/web3.js` **1.x**, Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, not Expo Go |
 | Time | Unix seconds (`i64`) on chain, local time in UI |
-| Share link | `/v/<hash>` + optional `#k=<key>`, Memo fallback `?tx=<signature>` |
-| Memo format | `witness:v1:<hash hex>` |
+| Share link | `/v/<hash>` + optional `#k=<key>` |
 | Secrets | ElevenLabs and Supabase service keys only in Supabase secrets; repo ships only `.env.example` |
 
 ## Threats & design decisions
@@ -226,7 +221,6 @@ flowchart TD
 | Risk | Mitigation |
 | --- | --- |
 | Phone hash ≠ browser hash | Cross‑check (phone / browser / `shasum`); the file never changes after sealing |
-| Program not deployed / unavailable | Memo fallback (`?tx=`) |
 | Location left in the clear on chain | Off by default; only a commitment is ever written |
 | Transcription exposes audio | Audio goes to ElevenLabs only for opt‑in transcription; stated in the pitch, toggleable |
 

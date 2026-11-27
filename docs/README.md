@@ -3,7 +3,6 @@
 **Judge‑facing (English):**
 
 - [`TECHNICAL.md`](TECHNICAL.md) — technical source of truth: architecture, account layout, MWA flow, hash/encryption, Supabase, verification page, interface contracts.
-- [`MEMO_FALLBACK.md`](MEMO_FALLBACK.md) — `/v/<hash>?tx=<signature>` fallback verification contract if the program is ever unavailable.
 
 **Internal team planning (Turkish):**
 

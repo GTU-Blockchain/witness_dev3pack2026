@@ -85,8 +85,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | Hash | SHA‑256 of the file's final raw bytes. Lowercase hex (64 chars) in text, 32 bytes on chain. After sealing the file is **never** re‑encoded, trimmed, or re‑tagged |
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` — content‑addressed, one record per hash |
 | Time | Unix seconds (`i64`) on chain; UI shows local time |
-| Share link | `/v/<hash>` + optional `#k=<key>`; Memo fallback adds `?tx=<signature>` |
-| Memo format | `witness:v1:<hash hex>` (SPL Memo fallback if the program is ever unavailable) |
+| Share link | `/v/<hash>` + optional `#k=<key>` |
 | Privacy | Only the hash, timestamp, duration, and an optional location **commitment** go on chain. Audio, transcript, and raw coordinates **never** touch the chain |
 | Secrets | ElevenLabs and Supabase service keys live only in Supabase secrets; the repo ships only `.env.example` |
 
