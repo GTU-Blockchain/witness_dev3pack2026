@@ -247,7 +247,7 @@ function ProgressView({
           </View>
           <Text style={[styles.approvalTitle, scanPhase === 'approved' && styles.approvalTitleDone]}>
             {scanPhase === 'idle'
-              ? 'Seed Vault Hardware Approval'
+              ? 'Wallet Approval'
               : scanPhase === 'scanning'
                 ? 'Scanning fingerprint...'
                 : 'Approved'}
