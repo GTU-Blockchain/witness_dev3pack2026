@@ -13,7 +13,7 @@ Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the u
 | Captured at this location | 🔜 Planned, then claim only | Program has an optional `location_commitment`; the app does not fill it yet. Even then it is phone GPS, not cryptographic |
 | The content is real | Not provable | A speaker can play fake audio into a mic. We claim "unaltered", not "true" |
 
-**Core loop:** record/share/pick → hash → wallet approval (MWA) → write to chain → verification page ✅ / ❌. Everything else is additive: transcription is built; the share page, location commitment and encrypted sharing are on the roadmap.
+**Core loop:** record/share/pick → hash → wallet approval (MWA) → write to chain → verification page ✅ / ❌. Everything else is additive: transcription and the `/v/<hash>` share page are built; location commitment and encrypted sharing are on the roadmap.
 
 ## Architecture
 
@@ -143,7 +143,7 @@ Three distinct tools: SHA‑256 is a **hash** (one‑way, not encryption), Ed255
 
 **Hash rule:** SHA‑256 of the file's final raw bytes, lowercase hex (64 chars). Written as 32 bytes on chain. The same file produces the same result on the phone, in the browser, and via `shasum -a 256`.
 
-**End‑to‑end encrypted sharing (additive).** **Status: designed, not yet implemented.** The `upload-url` Edge Function and the private Storage bucket exist, but the app does not encrypt or upload files and the web has no `/v/` route yet.
+**End‑to‑end encrypted sharing (additive).** **Status: designed, not yet implemented.** The `upload-url` Edge Function and the private Storage bucket exist, but the app does not encrypt or upload files yet, and `/v/<hash>` does not read `#k=`.
 
 1. The phone generates a random 256‑bit key and encrypts the file with AES‑256‑GCM.
 2. Only the encrypted file is uploaded to Supabase Storage.
@@ -178,7 +178,7 @@ Full API reference (request/response shapes, error codes): [`../supabase/README.
 
 Verification happens entirely in the browser. The file never goes to a server; the page reads directly from Solana RPC, so you don't have to trust us. Next.js + `@solana/web3.js`, deployed on Vercel.
 
-**Pages:** `/` (drag & drop). Planned: `/v/<hash>` (share link; `#k=` auto‑downloads and decrypts, otherwise the user uploads the file). Step 5 and the `/v/hash` branch below describe that planned page.
+**Pages:** `/` (drag & drop) and `/v/<hash>` (share link). `/v/<hash>` first shows the on‑chain record for the URL hash with no file (anchored time, sealing wallet, duration, Explorer link), then checks a dropped file against that hash. A malformed hash shows an explanatory error; an upper‑case hash redirects to lowercase. Planned: `#k=` auto‑downloads and decrypts the encrypted copy (roadmap). Both pages share one lookup function, `lookupRecording` in `web/lib/recording.ts`.
 
 **Steps:**
 
@@ -186,7 +186,7 @@ Verification happens entirely in the browser. The file never goes to a server; t
 2. PDA = `findProgramAddressSync(["rec", hash], PROGRAM_ID)`.
 3. `getAccountInfo(pda)` → decode `Recording` with the Anchor coder.
 4. No account → ❌; account present → ✅ with details.
-5. On `/v/<hash>`, if the uploaded file's hash ≠ the URL hash → ❌ "not that record, trimmed or modified".
+5. On `/v/<hash>`, if the dropped file's hash ≠ the URL hash → ❌ "This is not the sealed file: it was modified, trimmed or re-encoded." (decided before any RPC call).
 
 ```mermaid
 flowchart TD
@@ -213,7 +213,7 @@ flowchart TD
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` |
 | Package versions | `@coral-xyz/anchor` **0.31.x** (app + web, to read the program's IDL), `@solana/web3.js` **1.x**, Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, not Expo Go |
 | Time | Unix seconds (`i64`) on chain, local time in UI |
-| Share link | `/v/<hash>` + optional `#k=<key>` (roadmap) |
+| Share link | `/v/<hash>` (64 lowercase hex); `#k=<key>` encrypted variant is on the roadmap |
 | Secrets | ElevenLabs and Supabase service keys only in Supabase secrets; repo ships only `.env.example` |
 
 ## Threats & design decisions

@@ -180,4 +180,13 @@ dd a:hover { text-decoration: underline; }
 .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: var(--r-full); background: var(--ground); color: var(--muted); border: 1px solid var(--border); }
 .note { font-size: 11.5px; color: var(--faint); padding: 0 20px 18px; line-height: 1.5; }
 
+/* /v/<hash> share page */
+.brand-link { color: inherit; text-decoration: none; width: fit-content; }
+.btn-link {
+  display: inline-block; text-decoration: none; font-size: 13.5px; font-weight: 550;
+  border-radius: var(--r-full); padding: 9px 18px;
+}
+.inline-dl { padding: 10px 0 0; }
+.share-drop { border-top: 1px solid var(--border); }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

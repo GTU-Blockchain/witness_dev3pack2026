@@ -13,12 +13,17 @@ export function ResultCard({
   hash,
   result,
   file,
+  badTitle,
+  badLine,
   onReset,
 }: {
   fileName: string
   hash: string
   result: LookupResult
   file: File
+  /** Optional ❌ wording, e.g. on /v/<hash> when the file is not the one in the link. */
+  badTitle?: string
+  badLine?: string
   onReset: () => void
 }) {
   const sealed = result.status === 'sealed'
@@ -41,12 +46,12 @@ export function ResultCard({
     <div className={`result ${sealed ? 'r-ok' : 'r-bad'}`}>
       <div className="head">
         <div className="badge">{sealed ? '✓' : '✕'}</div>
-        <h2>{sealed ? 'Unaltered' : "Doesn't match the sealed record"}</h2>
+        <h2>{sealed ? 'Unaltered' : (badTitle ?? "Doesn't match the sealed record")}</h2>
       </div>
       <p className="line">
         {sealed
           ? 'This file has not been altered since it was sealed.'
-          : 'This file was never sealed, or was modified after sealing.'}
+          : (badLine ?? 'This file was never sealed, or was modified after sealing.')}
       </p>
 
       <WaveForm file={file} colorVar={sealed ? '--ok-ink' : '--faint'} />
