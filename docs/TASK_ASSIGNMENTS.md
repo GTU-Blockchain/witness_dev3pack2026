@@ -1,10 +1,10 @@
 # Witness — Görev Dağılımı (5 kişi, rol eşlemesi)
 
-_`docs/GOREV_PANOSU.md` değişmedi; tek doğruluk kaynağı ve görev/öncelik listesi olarak aynen kalıyor. Bu dosya, panodaki rolleri gerçek kişi sayısına göre eşleyip kişi bazlı yürütme planlarına ayırıyor._
+_`docs/TASK_BOARD.md` değişmedi; tek doğruluk kaynağı ve görev/öncelik listesi olarak aynen kalıyor. Bu dosya, panodaki rolleri gerçek kişi sayısına göre eşleyip kişi bazlı yürütme planlarına ayırıyor._
 
 ## Neden
 
-Ekip 5 kişi ama `docs/GOREV_PANOSU.md` görevleri 5 role 1:1 eşliyor (her role bir kişi). Gerçek dağılım farklı: **2 kişi Rol 1 (Mobil UI)**'de, **1 kişi Rol 4 (Web doğrulama)**'da, **1 kişi Rol 5 (Backend + kaptan)**'da, **1 kişi Rol 2 (Cüzdan + entegrasyon) ve Rol 3 (Solana programı)**'nı birlikte üstleniyor. Rol 1'in 2 kişiye bölünmesinde ekrana göre bölüşüm seçildi: Kişi A MVP ekranlarının ikisini (Kayıt + Mühürleme durumu), Kişi B kalan ekranları (Cüzdan bağla + ekstra ekranlar) alıyor.
+Ekip 5 kişi ama `docs/TASK_BOARD.md` görevleri 5 role 1:1 eşliyor (her role bir kişi). Gerçek dağılım farklı: **2 kişi Rol 1 (Mobil UI)**'de, **1 kişi Rol 4 (Web doğrulama)**'da, **1 kişi Rol 5 (Backend + kaptan)**'da, **1 kişi Rol 2 (Cüzdan + entegrasyon) ve Rol 3 (Solana programı)**'nı birlikte üstleniyor. Rol 1'in 2 kişiye bölünmesinde ekrana göre bölüşüm seçildi: Kişi A MVP ekranlarının ikisini (Kayıt + Mühürleme durumu), Kişi B kalan ekranları (Cüzdan bağla + ekstra ekranlar) alıyor.
 
 Türkiye'de local track olduğu teyit edildi.
 
@@ -24,7 +24,7 @@ Rol 2+3 (Cüzdan + entegrasyon / Solana programı) tarafındaki Sıra 1 adımlar
 | ✅ | Phantom in-app imza | `witness:v1:0000…` memo'su Phantom ile imzalanıp devnet'te **finalized** (tx `246bvDWt…F4iYn`) |
 | ✅ | Anchor testleri (4 senaryo) | `program/tests/witness.ts` localnet'te geçti (geçerli kayıt / çift hash / duration 0 / location) |
 | ✅ | SHA-256 hash util | `app/utils/witness-hash.ts` (expo-crypto), `shasum -a 256` ile doğrulandı |
-| ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_YEDEGI_SOZLESMESI.md` (Rol 4 bunu uygular) |
+| ✅ | Memo yedeği `?tx=` sözleşmesi | `docs/MEMO_FALLBACK.md` (Rol 4 bunu uygular) |
 | ✅ | Anchor devnet deploy | Program ID `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`; IDL + TS types + `*_WITNESS_PROGRAM_ID` env'leri commit'li |
 | ✅ | `register_recording` çağrısı (in-app Phantom dahil) | `app/utils/witness-program.ts` + in-app buton; emülatörde gerçek Phantom imzasıyla PDA devnet'te finalized. Gerçek dosya hash'ini bağlama (Kişi A kaydı + rebuild) kaldı |
 | ✅ | **Katman 1 — Paylaş-menüsü mühürleme (fonksiyonel iskelet)** | `feature/katman-1-share-intent` branch'i; galeriden gerçek foto → Paylaş → Witness → gerçek SHA-256 → register → devnet'te finalized (tx `3GxqbH92…CSHN`, hash `a2aac7fa…fab24`). UI şu an dev-scaffold kartı; gerçek UI **Rol 6** (bkz. aşağı) |
@@ -51,7 +51,7 @@ Geri kalan ekip (Kişi A/B/C/D) durumu: aşağıdaki kişi planları referans. `
 | Kişi D | 5 Backend + kaptan | Supabase tablo/bucket/RLS, Edge Function'lar, check-in'ler, pitch/demo/gönderim |
 | Rol 6 (ben) | 6 Katman 1 — Paylaş-menüsü mühürleme UI | Share-to-Seal akışının gerçek UI'ı: paylaşımla gelen dosyayı mühürleme, dosya önizleme, Phantom dönüşünde kalıcı sonuç. **Ana UI (Rol 1) geldikten sonra** yapılacak |
 
-Ortak kurallar (hash tanımı, ses formatı, PDA seed, Memo formatı, gizli anahtar kuralı) `docs/TEKNIK_DOKUMAN.md` → "Ortak kurallar" tablosunda; burada tekrarlanmıyor.
+Ortak kurallar (hash tanımı, ses formatı, PDA seed, Memo formatı, gizli anahtar kuralı) `docs/TECHNICAL.md` → "Ortak kurallar" tablosunda; burada tekrarlanmıyor.
 
 ---
 
@@ -74,7 +74,7 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 
 3. **İLK İŞ — Memo testi (risk kapısı)**
    - `authorize({ cluster: "devnet", identity: {...} })` ile bağlan, SPL Memo programına `witness:v1:<hash hex>` formatında test metni gönder
-   - Kural: Memo formatı `witness:v1:<hash hex>` (`docs/TEKNIK_DOKUMAN.md` → Memo yedeği)
+   - Kural: Memo formatı `witness:v1:<hash hex>` (`docs/TECHNICAL.md` → Memo yedeği)
    - Kabul kriteri: işlem imzası Solana Explorer'da (devnet) görünüyor
    - **Yedek plan:** Çalışmazsa tüm ekibe haber ver, Android emülatör + mock wallet'a geç — bu adım MVP'nin kritik yolu
 
@@ -121,7 +121,7 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 
 ## Kişi A planı: Rol 1 — Kayıt ekranı + Mühürleme durumu ekranı
 
-(`app/README.md` ekran tablosu, `docs/TEKNIK_DOKUMAN.md` "Mobil uygulama ve UI")
+(`app/README.md` ekran tablosu, `docs/TECHNICAL.md` "Mobil uygulama ve UI")
 
 - **Kayıt ekranı (MVP):** kaydet/durdur butonu, süre sayacı, ses seviyesi göstergesi, durdurunca dinle, "Mühürle"/"Sil" butonları, konum anahtarı (varsayılan kapalı). Çıktı: m4a (AAC, mono, 44.1 kHz). Bağımlılık: Rol 2'nin bootstrap'ladığı `/app` scaffold'u.
 - **Mühürleme durumu ekranı (MVP):** adım adım ilerleme (Hash hesaplanıyor → Cüzdan onayı bekleniyor → Zincire yazılıyor → ✅ Mühürlendi), hash'in ilk 8 karakteri, Explorer linki, Paylaş butonu, hata + "Tekrar dene". Bağımlılık: Rol 2'nin register_recording akışı — gelene kadar sahte/mock durum geçişleriyle UI'yı kur.
@@ -139,7 +139,7 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 
 ## Kişi C planı: Rol 4 — Web doğrulama
 
-(`web/README.md`, `docs/TEKNIK_DOKUMAN.md` "Web doğrulama sayfası")
+(`web/README.md`, `docs/TECHNICAL.md` "Web doğrulama sayfası")
 
 - `npx create-next-app@latest . --ts --app --eslint` + `@solana/web3.js` `@coral-xyz/anchor`; `/` sürükle-bırak iskeleti, tarayıcıda `crypto.subtle.digest("SHA-256", buf)`, sahte veriyle ✅/❌ sonuç ekranı. IDL gelene kadar mock PDA verisiyle çalış.
 - Hash çapraz testi — Kişi A'nın kayıt ekranından çıkan dosyayla (telefon/tarayıcı/`shasum -a 256` aynı hex).
@@ -155,7 +155,7 @@ Rol 3 çıktısı (program ID + IDL) Rol 2'nin girdisi — aynı kişi olduğu i
 
 ## Kişi D planı: Rol 5 — Backend + kaptan
 
-(`supabase/README.md`, `docs/TEKNIK_DOKUMAN.md` "Supabase", GOREV_PANOSU kaptan görevleri)
+(`supabase/README.md`, `docs/TECHNICAL.md` "Supabase", TASK_BOARD kaptan görevleri)
 
 - **Kalan hazırlık görevleri:** rolleri isimlere ata; hesaplar — ElevenLabs API key, Supabase projesi, Vercel, her cüzdana devnet SOL. (Türkiye local track sorusu teyit edildi: var.)
 - `supabase/migrations/20261125000000_recordings.sql` zaten yazılmış — `supabase link` + `supabase db push` ile gerçek projeye uygula, bucket/RLS'i doğrula. ElevenLabs Scribe ile Türkçe kayıt denemesi.
@@ -193,9 +193,9 @@ Teknik durum ve emülatör tuzakları (v1 imza/apksigner, Private DNS, Fake Wall
 
 ---
 
-## Riskler (ekip çapında, GOREV_PANOSU'dan referans — değişmedi)
+## Riskler (ekip çapında, TASK_BOARD'dan referans — değişmedi)
 
-MWA/Seed Vault başarısızlığı, hash tutarsızlığı, Anchor deploy gecikmesi, devnet/faucet limiti, ElevenLabs gecikmesi, konumun açık kalması — hepsi `docs/TEKNIK_DOKUMAN.md` "Riskler, açık kararlar ve demo" tablosunda ve yedekleri zaten tanımlı; bu dosya onları değiştirmiyor, sadece kişilere atıyor.
+MWA/Seed Vault başarısızlığı, hash tutarsızlığı, Anchor deploy gecikmesi, devnet/faucet limiti, ElevenLabs gecikmesi, konumun açık kalması — hepsi `docs/TECHNICAL.md` "Riskler, açık kararlar ve demo" tablosunda ve yedekleri zaten tanımlı; bu dosya onları değiştirmiyor, sadece kişilere atıyor.
 
 ## Açık sorular
 

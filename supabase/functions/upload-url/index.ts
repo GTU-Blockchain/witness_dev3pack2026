@@ -1,5 +1,5 @@
 // Edge Function: upload-url  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TEKNIK_DOKUMAN.md → "Supabase" → Storage / Edge Function'lar, "Paylaşım için uçtan uca şifreleme"
+// Sözleşme: docs/TECHNICAL.md → "Supabase" → Storage / Edge Function'lar, "Paylaşım için uçtan uca şifreleme"
 //
 // Girdi:  POST { audio_hash, signature }
 //         signature: kaydı register eden cüzdanın `witness-upload:<audio_hash>` mesajına attığı ed25519 imzası

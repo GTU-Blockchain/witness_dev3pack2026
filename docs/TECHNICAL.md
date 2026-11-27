@@ -97,7 +97,7 @@ pub struct Recording {
 
 **Deliberately omitted:** account close (proof can't be deleted), update instruction (immutability), admin key. Upgrade authority stays with the team on devnet; on mainnet the program would be immutable.
 
-**Memo fallback (SPL Memo):** if the program is ever unavailable, the app sends a Memo tx with text `witness:v1:<hash hex>`. Verification then needs the tx signature; the hash → signature mapping is kept by Supabase and added to the share link as `?tx=`. Full spec: [`MEMO_YEDEGI_SOZLESMESI.md`](MEMO_YEDEGI_SOZLESMESI.md).
+**Memo fallback (SPL Memo):** if the program is ever unavailable, the app sends a Memo tx with text `witness:v1:<hash hex>`. Verification then needs the tx signature; the hash → signature mapping is kept by Supabase and added to the share link as `?tx=`. Full spec: [`MEMO_FALLBACK.md`](MEMO_FALLBACK.md).
 
 ## Wallet integration (MWA + hardware wallet)
 

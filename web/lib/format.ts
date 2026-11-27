@@ -24,7 +24,7 @@ export function formatDuration(ms: number): string {
 
 /**
  * Süre gösterilmeli mi? Program `duration_ms > 0` istediği için fotoğraf gibi süresiz dosyalar
- * zincire `duration_ms = 1` ile yazılır (docs/TEKNIK_DOKUMAN.md → Supabase → duration_ms).
+ * zincire `duration_ms = 1` ile yazılır (docs/TECHNICAL.md → Supabase → duration_ms).
  * Kural: sadece ses/videoda göster. Tarayıcı türü bilmiyorsa (boş MIME) 1 ms'yi "süresiz" say.
  */
 export function shouldShowDuration(mimeType: string, durationMs: number): boolean {

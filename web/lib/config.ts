@@ -1,5 +1,5 @@
 // 4: Web doğrulama yapılandırması. Gizli değer yok; env yoksa devnet + IDL adresi.
-// Kurallar: docs/TEKNIK_DOKUMAN.md → "Ortak kurallar" (Program, Paket sürümleri).
+// Kurallar: docs/TECHNICAL.md → "Ortak kurallar" (Program, Paket sürümleri).
 import { PublicKey } from '@solana/web3.js'
 import idl from '@/idl/witness.json'
 

@@ -1,4 +1,4 @@
--- Paylaşılan dosyalar için storage kuralları (TEKNIK_DOKUMAN → Supabase → Storage).
+-- Paylaşılan dosyalar için storage kuralları (TECHNICAL → Supabase → Storage).
 --
 -- 1) Boyut sınırı: bucket'a 25 MB'tan büyük dosya yüklenemez (upload-url ile verilen linkler de buna tabi).
 update storage.buckets

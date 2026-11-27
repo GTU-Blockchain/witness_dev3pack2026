@@ -1,5 +1,5 @@
 // Edge Function: register  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TEKNIK_DOKUMAN.md → "Supabase" → Edge Function'lar
+// Sözleşme: docs/TECHNICAL.md → "Supabase" → Edge Function'lar
 //
 // Girdi:  POST { audio_hash, tx_signature, wallet, mime_type? }
 //         mime_type isteğe bağlı (örn. "audio/mp4", "image/jpeg"). Ses/video değilse transcript_status = 'skipped'.

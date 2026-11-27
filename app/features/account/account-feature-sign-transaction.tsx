@@ -14,7 +14,7 @@ export function AccountFeatureSignTransaction({ address }: { address: PublicKey 
           value: latestBlockhash,
         } = await connection.getLatestBlockhashAndContext()
 
-        // İLK İŞ: Memo yedeği formatı (docs/TEKNIK_DOKUMAN.md → Memo yedeği).
+        // İLK İŞ: Memo yedeği formatı (docs/TECHNICAL.md → Memo yedeği).
         // Şimdilik örnek bir hash; gerçek akışta dosyanın SHA-256'sı gelecek.
         const sampleHash = '0'.repeat(64)
         const message = new TransactionMessage({

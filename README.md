@@ -110,7 +110,7 @@ cd witness_dev3pack2026
 cp .env.example .env   # fill in values; .env is never committed
 ```
 
-Each folder's own README has setup steps. Deep dive: [`docs/TEKNIK_DOKUMAN.md`](docs/TEKNIK_DOKUMAN.md).
+Each folder's own README has setup steps. Deep dive: [`docs/TECHNICAL.md`](docs/TECHNICAL.md).
 
 ## Why Solana Mobile
 

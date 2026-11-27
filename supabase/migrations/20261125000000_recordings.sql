@@ -1,5 +1,5 @@
 -- Witness: recordings tablosu + private storage bucket + RLS
--- Kaynak: docs/TEKNIK_DOKUMAN.md → "Supabase"
+-- Kaynak: docs/TECHNICAL.md → "Supabase"
 
 create table if not exists public.recordings (
   audio_hash        text primary key check (audio_hash ~ '^[0-9a-f]{64}$'),

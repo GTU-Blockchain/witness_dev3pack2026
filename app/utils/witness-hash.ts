@@ -1,5 +1,5 @@
 // 2: Ses dosyasının SHA-256'sı — mühürlemenin temeli.
-// Ortak kural (docs/TEKNIK_DOKUMAN.md): "Dosyanın son halinin ham baytlarının
+// Ortak kural (docs/TECHNICAL.md): "Dosyanın son halinin ham baytlarının
 // SHA-256'sı, küçük harf hex." Dosya asla yeniden kodlanmaz; ham baytlar hash'lenir.
 // Not: expo-crypto + expo-file-system native modül; bunları çağıran bir ekran
 // eklenince dev build'in yeniden alınması (expo run:android) gerekir.
@@ -29,7 +29,7 @@ export async function sha256HexOfFile(uri: string): Promise<string> {
   return sha256HexOfBytes(new Uint8Array(buffer))
 }
 
-/** Memo yedeği metni: `witness:v1:<hash hex>` (docs/TEKNIK_DOKUMAN.md → Memo yedeği). */
+/** Memo yedeği metni: `witness:v1:<hash hex>` (docs/TECHNICAL.md → Memo yedeği). */
 export function witnessMemo(hashHex: string): string {
   return `witness:v1:${hashHex}`
 }

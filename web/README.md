@@ -21,7 +21,7 @@ npm run dev
 ## Pages
 
 - `/` — drag & drop; "your file never leaves your computer".
-- `/v/<hash>` — share link. With `#k=` it downloads the encrypted file, decrypts, and verifies; otherwise the user uploads the file themselves. Memo fallback via `?tx=<signature>` → full spec in [`docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md).
+- `/v/<hash>` — share link. With `#k=` it downloads the encrypted file, decrypts, and verifies; otherwise the user uploads the file themselves. Memo fallback via `?tx=<signature>` → full spec in [`docs/MEMO_FALLBACK.md`](../docs/MEMO_FALLBACK.md).
 
 ## Verification steps
 

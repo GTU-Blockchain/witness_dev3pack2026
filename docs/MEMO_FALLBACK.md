@@ -1,6 +1,6 @@
 # Memo fallback `?tx=` contract
 
-If the Anchor program is ever unavailable, the MVP survives through this path. It's a **fallback** — if the program (PDA) path works, this isn't used. Both give the same promise: "this file hasn't changed since the moment it was signed." Shared rules: [`TEKNIK_DOKUMAN.md`](TEKNIK_DOKUMAN.md).
+If the Anchor program is ever unavailable, the MVP survives through this path. It's a **fallback** — if the program (PDA) path works, this isn't used. Both give the same promise: "this file hasn't changed since the moment it was signed." Shared rules: [`TECHNICAL.md`](TECHNICAL.md).
 
 ## Definitions
 

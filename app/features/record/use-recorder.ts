@@ -13,7 +13,7 @@ import {
 import { File } from 'expo-file-system'
 import type { RecordStatus } from '@/src/screens/RecordScreen'
 
-// Ortak kural (docs/TEKNIK_DOKUMAN.md): m4a (AAC), mono, 44.1 kHz.
+// Ortak kural (docs/TECHNICAL.md): m4a (AAC), mono, 44.1 kHz.
 // Kaydedilen dosya sonradan asla yeniden kodlanmaz / kırpılmaz; mühürleme bu ham dosyayı hash'ler.
 const RECORDING_OPTIONS: RecordingOptions = {
   extension: '.m4a',

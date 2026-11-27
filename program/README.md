@@ -47,4 +47,4 @@ No account close (proof can't be deleted), no update instruction (immutability),
 
 ## Memo fallback
 
-If the program is ever unavailable, the app sends an SPL Memo with text `witness:v1:<hash hex>` and the web page verifies via `?tx=<signature>`. Spec: [`../docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md).
+If the program is ever unavailable, the app sends an SPL Memo with text `witness:v1:<hash hex>` and the web page verifies via `?tx=<signature>`. Spec: [`../docs/MEMO_FALLBACK.md`](../docs/MEMO_FALLBACK.md).
