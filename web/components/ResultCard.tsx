@@ -41,29 +41,29 @@ export function ResultCard({
     <div className={`result ${sealed ? 'r-ok' : 'r-bad'}`}>
       <div className="head">
         <div className="badge">{sealed ? '✓' : '✕'}</div>
-        <h2>{sealed ? 'Değişmemiş' : 'Mühürlü kayıtla eşleşmiyor'}</h2>
+        <h2>{sealed ? 'Unaltered' : "Doesn't match the sealed record"}</h2>
       </div>
       <p className="line">
         {sealed
-          ? 'Bu dosya mühürlendiğinden beri değiştirilmemiş.'
-          : 'Bu dosya hiç mühürlenmemiş ya da mühürlendikten sonra değiştirilmiş.'}
+          ? 'This file has not been altered since it was sealed.'
+          : 'This file was never sealed, or was modified after sealing.'}
       </p>
 
       <WaveForm file={file} colorVar={sealed ? '--ok-ink' : '--faint'} />
 
       {sealed && result.status === 'sealed' && (
         <div className="when">
-          En geç şu anda vardı
+          Existed no later than
           <b>{formatIstanbul(result.recording.anchoredAt)}</b>
         </div>
       )}
 
       <div className="actions">
         <button className="btn-primary" onClick={() => setOpen(true)}>
-          Detaylar
+          Details
         </button>
         <button className="btn-ghost" onClick={onReset}>
-          Yeni dosya
+          New file
         </button>
       </div>
 

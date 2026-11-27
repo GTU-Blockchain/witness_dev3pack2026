@@ -17,7 +17,7 @@ export function bytesToHex(bytes: Uint8Array): string {
 
 /** 64 karakter küçük harf hex → 32 bayt. Geçersizse hata fırlatır. */
 export function hexToBytes(hex: string): Uint8Array {
-  if (!isHex64(hex)) throw new Error('Hash 64 karakter küçük harf hex olmalı')
+  if (!isHex64(hex)) throw new Error('Hash must be 64 lowercase hex characters')
   const out = new Uint8Array(32)
   for (let i = 0; i < 32; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
   return out
@@ -45,7 +45,7 @@ export async function sha256HexOfFile(file: File, onProgress?: (fraction: number
   let offset = 0
   while (offset < file.size) {
     const chunk = new Uint8Array(await file.slice(offset, offset + CHUNK_BYTES).arrayBuffer())
-    if (chunk.length === 0) throw new Error('Dosya okunurken beklenmedik şekilde bitti')
+    if (chunk.length === 0) throw new Error('The file ended unexpectedly while reading')
     hasher.update(chunk)
     offset += chunk.length
     onProgress?.(offset / file.size)

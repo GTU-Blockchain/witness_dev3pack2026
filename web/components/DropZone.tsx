@@ -25,8 +25,8 @@ export function DropZone({ onFile, disabled }: { onFile: (file: File) => void; d
       }}
     >
       <div className="ico">⤓</div>
-      <div className="big">Dosyayı buraya bırak ya da tıklayıp seç</div>
-      <div className="sub">Parmak izi (SHA-256) tarayıcınızda hesaplanır</div>
+      <div className="big">Drop a file here, or click to choose</div>
+      <div className="sub">The fingerprint (SHA-256) is computed in your browser</div>
       <input
         ref={input}
         type="file"

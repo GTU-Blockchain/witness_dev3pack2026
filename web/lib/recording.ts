@@ -45,19 +45,19 @@ export async function lookupRecording(hashHex: string): Promise<LookupResult> {
   const info = await getConnection().getAccountInfo(pda, 'confirmed')
   if (!info) return { status: 'not_found', pda: pda.toBase58() }
   if (!info.owner.equals(PROGRAM_ID)) {
-    return { status: 'invalid', pda: pda.toBase58(), reason: 'Hesap Witness programına ait değil' }
+    return { status: 'invalid', pda: pda.toBase58(), reason: 'Account does not belong to the Witness program' }
   }
 
   let d: any
   try {
     d = coder.decode('Recording', info.data)
   } catch {
-    return { status: 'invalid', pda: pda.toBase58(), reason: 'Hesap Recording olarak çözülemedi' }
+    return { status: 'invalid', pda: pda.toBase58(), reason: 'Account could not be decoded as a Recording' }
   }
 
   const audioHash = bytesToHex(Uint8Array.from(d.audio_hash))
   if (audioHash !== hashHex) {
-    return { status: 'invalid', pda: pda.toBase58(), reason: 'Zincirdeki hash dosyanınkiyle eşleşmiyor' }
+    return { status: 'invalid', pda: pda.toBase58(), reason: 'The on-chain hash does not match the file' }
   }
 
   return {
