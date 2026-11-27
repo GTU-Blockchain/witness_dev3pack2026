@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import type { LookupResult } from '@/lib/recording'
 import { explorerAddress, explorerTx, formatDuration, formatIstanbul, shortAddress, shouldShowDuration } from '@/lib/format'
 
-function Row({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
+export function Row({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
     <div className="row">
       <dt>{label}</dt>

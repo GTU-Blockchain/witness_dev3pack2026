@@ -3,8 +3,13 @@ import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { SealingScreen } from '@/src/screens/SealingScreen'
 import { getRecording } from '@/features/record/recordings-store'
 import { useSeal } from '@/features/record/use-seal'
+import { AppConfig } from '@/constants/app-config'
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
+
+// Public share page on the web verifier: /v/<hash> shows the on-chain record and checks a dropped file.
+const VERIFY_BASE_URL = (process.env.EXPO_PUBLIC_VERIFY_BASE_URL || AppConfig.uri).replace(/\/+$/, '')
+const verificationUrlFor = (hash?: string) => (hash ? `${VERIFY_BASE_URL}/v/${hash}` : undefined)
 
 export default function SealRoute() {
   const { account } = useMobileWallet()
@@ -16,14 +21,14 @@ export default function SealRoute() {
   return <SealFlow id={id} walletLabel={shortAddress(String(account.address))} />
 }
 
-// Hook'lar koşullu çağrılamadığı için akış ayrı bileşende.
+// Hooks can't be called conditionally, so the flow lives in its own component.
 function SealFlow({ id, walletLabel }: { id: string; walletLabel: string }) {
   const seal = useSeal(id)
 
   return (
     <SealingScreen
-      // Yeni denemede ekranı sıfırla: SealingScreen onay butonunun durumunu sadece adım
-      // değişince sıfırlıyor; hata sonrası aynı adıma dönüldüğünde "Approved"da takılıyordu.
+      // Reset the screen on each new attempt: SealingScreen only resets the approve button when the
+      // step changes, so after an error it stayed stuck on "Approved" when returning to the same step.
       key={seal.attempt}
       step={seal.step}
       error={seal.error}
@@ -32,6 +37,7 @@ function SealFlow({ id, walletLabel }: { id: string; walletLabel: string }) {
       locationEnabled={seal.locationEnabled}
       slot={seal.slot}
       explorerUrl={seal.explorerUrl}
+      verificationUrl={verificationUrlFor(seal.hash)}
       transcript={seal.transcript}
       walletLabel={walletLabel}
       onApprove={seal.approve}

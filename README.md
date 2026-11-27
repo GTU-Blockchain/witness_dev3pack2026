@@ -38,6 +38,7 @@ Everything in this list is in the code and runs on devnet now. Anything not list
 - Anchor program `register_recording` on devnet: one immutable record per hash; no close, no update, no admin
 - `register` Edge Function that independently re-verifies the tx, signer, instruction, PDA and account before writing to the DB
 - Browser verifier: in-browser hash → PDA → `getAccountInfo` → ✅ / ❌; it never uploads the file
+- Shareable verification links (`/v/<hash>`): the Sealed screen's Share / Copy link opens a page that shows the on-chain record without the file, then checks a dropped file against that exact hash
 - Optional transcription (ElevenLabs Scribe) for audio and video
 
 ## How it works
@@ -178,7 +179,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | Hash | SHA‑256 of the file's final raw bytes. Lowercase hex (64 chars) in text, 32 bytes on chain. After sealing the file is **never** re‑encoded, trimmed, or re‑tagged |
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` — content‑addressed, one record per hash |
 | Time | Unix seconds (`i64`) on chain; UI shows local time |
-| Share link | `/v/<hash>` + optional `#k=<key>` (roadmap) |
+| Share link | `/v/<hash>` (64 lowercase hex); `#k=<key>` encrypted variant is on the roadmap |
 | Privacy | Only the hash, timestamp, duration, and an optional location **commitment** go on chain. Audio, transcript, and raw coordinates **never** touch the chain |
 | Secrets | ElevenLabs and Supabase service keys live only in Supabase secrets; the repo ships only `.env.example` |
 
@@ -188,7 +189,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | --- | --- |
 | [`/app`](app) | React Native + Expo **dev build** (Solana Mobile template): UI, recording, MWA signing, hash |
 | [`/program`](program) | Anchor program (`register_recording`), tests, IDL |
-| [`/web`](web) | Next.js verification page (`/`; `/v/<hash>` on the roadmap), deployed on Vercel |
+| [`/web`](web) | Next.js verification page (`/` and `/v/<hash>` share links), deployed on Vercel |
 | [`/supabase`](supabase) | SQL migrations + Edge Functions (`register`, `transcribe`, `upload-url`) |
 | [`/docs`](docs) | Technical deep‑dive ([`TECHNICAL.md`](docs/TECHNICAL.md)); internal team‑planning notes (Turkish) under [`docs/internal`](docs/internal) |
 

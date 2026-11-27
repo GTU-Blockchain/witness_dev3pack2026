@@ -1,25 +1,25 @@
-// 4: Görüntüleme yardımcıları. Zaman: zincirde Unix saniye, UI'da İstanbul saati.
+// Display helpers. Time: Unix seconds on chain, shown in Istanbul time in the UI.
 import { SOLANA_CLUSTER } from './config'
 
 export function shortAddress(addr: string): string {
   return addr.length > 10 ? `${addr.slice(0, 4)}…${addr.slice(-4)}` : addr
 }
 
-const istanbul = new Intl.DateTimeFormat('tr-TR', {
+const istanbul = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Istanbul',
   dateStyle: 'long',
   timeStyle: 'medium',
 })
 
 export function formatIstanbul(unixSeconds: number): string {
-  return `${istanbul.format(new Date(unixSeconds * 1000))} (İstanbul)`
+  return `${istanbul.format(new Date(unixSeconds * 1000))} (Istanbul time)`
 }
 
 export function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000)
   const m = Math.floor(total / 60)
   const s = total % 60
-  return m > 0 ? `${m} dk ${s} sn` : `${s} sn`
+  return m > 0 ? `${m} min ${s} s` : `${s} s`
 }
 
 /**
