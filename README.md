@@ -28,6 +28,20 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 - **Verification site:** https://web-pi-cyan-30.vercel.app (hashes in your browser, reads straight from Solana RPC — you don't have to trust us)
 - **Program (devnet):** [`2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`](https://explorer.solana.com/address/2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ?cluster=devnet)
 - **Status:** full flow proven end‑to‑end on devnet — audio recordings and shared/picked photos sealed, then independently re‑verified (browser hash + `getAccountInfo` on the PDA, byte‑for‑byte match).
+- **A real seal you can check:** an 11‑second voice note recorded in the app and approved in Phantom on the Android emulator (2026‑11‑28; the emulator's mic is silent, hence the flat waveform below).
+  - Transaction: [`4kJ7…nctm`](https://explorer.solana.com/tx/4kJ7nzLYtLuzH41nhiTS6tuB2NR4i31xCuHc7a3fMj2sz7Vnq7ETcPwwG6yzr9QRkMNs9jFpPm8W45vz39T3nctm?cluster=devnet) (Solana Explorer, devnet)
+  - Share link: [`/v/9d48bc02…9569af0`](https://web-pi-cyan-30.vercel.app/v/9d48bc02b1b57fb0adc4babb47de969dcfa6c29cc8414f112d885896d9569af0) shows the on‑chain record with no file needed
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/media/verify-ok.png" width="360" alt="Verifier: the original recording, result Unaltered"></td>
+    <td align="center"><img src="docs/media/verify-modified.png" width="360" alt="Verifier: the same recording with one byte appended, result Not the sealed file"></td>
+  </tr>
+  <tr>
+    <td align="center">✅ The original recording</td>
+    <td align="center">❌ The same file with one byte appended</td>
+  </tr>
+</table>
 
 ## Built today
 
