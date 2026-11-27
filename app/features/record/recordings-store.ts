@@ -12,6 +12,12 @@ export type StoredRecording = RecordingItem & {
   uri: string
   signature?: string
   slot?: number
+  /** Mühürleyen cüzdan (base58); Supabase'e register için. */
+  wallet?: string
+  /** Supabase `register` başarılı oldu mu (bkz. features/record/backend-sync.ts). */
+  backendSynced?: boolean
+  transcriptStatus?: 'pending' | 'done' | 'failed' | 'skipped'
+  transcriptLang?: 'tr' | 'en' | null
 }
 
 const dir = new Directory(Paths.document, 'recordings')
