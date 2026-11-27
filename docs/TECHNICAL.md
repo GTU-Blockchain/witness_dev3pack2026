@@ -1,6 +1,6 @@
 # Witness — Technical Documentation
 
-Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the user sign it with their hardware wallet (Seed Vault / Phantom via Mobile Wallet Adapter), and writes a record to Solana. Anyone can then verify the file hasn't changed since that moment. This is the single technical source of truth for the system.
+Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the user sign it through Mobile Wallet Adapter (Seed Vault on a Seeker, Phantom elsewhere; the app never holds a key), and writes a record to Solana. Anyone can then verify the file hasn't changed since that moment. This is the single technical source of truth for the system.
 
 ## What it proves
 
@@ -10,10 +10,10 @@ Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the u
 | Not one byte has changed since | Provable | SHA‑256 match |
 | This wallet sealed it | Provable | Ed25519 transaction signature |
 | From a genuine Seeker device | 🔜 Planned | Seeker Genesis Token (SGT) check — not yet implemented |
-| Captured at this location | Claim only | Phone GPS, not cryptographic |
+| Captured at this location | 🔜 Planned, then claim only | Program has an optional `location_commitment`; the app does not fill it yet. Even then it is phone GPS, not cryptographic |
 | The content is real | Not provable | A speaker can play fake audio into a mic. We claim "unaltered", not "true" |
 
-**Core loop:** record/share/pick → hash → hardware‑wallet approval → write to chain → verification page ✅ / ❌. Everything else (transcript, share link, location, encrypted sharing) is additive.
+**Core loop:** record/share/pick → hash → wallet approval (MWA) → write to chain → verification page ✅ / ❌. Everything else is additive: transcription is built; the share page, location commitment and encrypted sharing are on the roadmap.
 
 ## Architecture
 
@@ -23,7 +23,7 @@ Critical path: app → wallet → program → PDA ← verification page. Supabas
 flowchart LR
   subgraph Phone["Seeker / Android"]
     APP["Witness app<br/>record/share/pick, SHA-256<br/>build transaction"]
-    SV["Hardware wallet<br/>private key in secure HW<br/>signs with biometrics"]
+    SV["MWA wallet<br/>(Seed Vault on Seeker, Phantom elsewhere)<br/>user approves in the wallet"]
   end
   subgraph Solana["Solana devnet"]
     PROG["Witness program<br/>register_recording<br/>one hash, once"]
@@ -32,7 +32,7 @@ flowchart LR
   WEB["Verification page<br/>Next.js, Vercel<br/>hashes file in-browser"]
   subgraph Supabase
     EF["Edge Functions<br/>register, transcribe, upload-url"]
-    DB["recordings + Storage<br/>transcript, tx signature<br/>encrypted audio"]
+    DB["recordings table<br/>transcript, tx signature<br/>(encrypted file: roadmap)"]
   end
   EL["ElevenLabs Scribe<br/>Turkish + English"]
 
@@ -45,7 +45,7 @@ flowchart LR
   EF -. transcription .-> EL
 ```
 
-The verification page reads the transcript and encrypted file from Supabase, but makes the ✅ / ❌ decision **only** from the on‑chain PDA.
+The verification page does not talk to Supabase at all: the ✅ / ❌ decision comes **only** from the on‑chain PDA.
 
 ## Mobile app & UI
 
@@ -54,12 +54,12 @@ Stack: React Native + Expo **dev build** (MWA does not work in Expo Go), Solana 
 | Screen | Contents | MVP? |
 | --- | --- | --- |
 | Connect wallet | "Connect" button, shortened address (`7xKq…a9F2`), devnet badge, SOL balance, faucet hint if low | Yes |
-| Record | Big record/stop button, timer, level meter, playback after stop, "Seal"/"Delete", location toggle (off by default) | Yes |
+| Record | Big record/stop button, timer, level meter, playback after stop, "Seal"/"Delete", location toggle (off by default; UI only for now, no commitment is computed yet) | Yes |
 | Seal status | Step‑by‑step: Hash → Waiting for wallet approval → Writing to chain → ✅ Sealed. First 8 hex chars, Explorer link, Share. Error + Retry | Yes |
 | My Recordings | Date, duration, status badge (Sealed / Pending / Error), first transcript line | Extra |
 | Recording detail | Player, full hash (copy), tx signature, chain time, transcript, share link | Extra |
 
-**User flow:** open → connect wallet once (MWA `authorize`, token cached) → record/stop/playback → Seal (app computes hash) → hardware approval (biometric) → tx goes to devnet → Sealed screen with Explorer + share link.
+**User flow:** open → connect wallet once (MWA `authorize`, token cached) → record/stop/playback → Seal (app computes hash) → approval in the wallet (biometric on Seed Vault) → tx goes to devnet → Sealed screen with Explorer link + Share.
 
 **Three entry points, one pipeline:** in‑app recording, OS share ("Share → Witness"), and the in‑app file picker ("Seal an existing file") all copy the file untouched and flow into the same `/seal` pipeline.
 
@@ -97,22 +97,22 @@ pub struct Recording {
 
 **Deliberately omitted:** account close (proof can't be deleted), update instruction (immutability), admin key. Upgrade authority stays with the team on devnet; on mainnet the program would be immutable.
 
-## Wallet integration (MWA + hardware wallet)
+## Wallet integration (Mobile Wallet Adapter)
 
-The app never touches the private key. It builds the transaction, sends it over Mobile Wallet Adapter to the hardware wallet, the user approves with biometrics, and the wallet signs and broadcasts.
+The app never touches the private key. It builds the transaction, sends it over Mobile Wallet Adapter to the wallet (Seed Vault on a Seeker, Phantom elsewhere), the user approves in the wallet (biometric on Seed Vault), and the wallet signs and broadcasts.
 
 ```mermaid
 sequenceDiagram
   participant U as User
   participant A as Witness app
-  participant W as Hardware wallet
+  participant W as MWA wallet
   participant S as Solana devnet
   participant B as Supabase (additive)
   U->>A: Record / Stop / Seal
   A->>A: SHA-256, derive PDA
   A->>A: build register_recording tx (blockhash)
   A->>W: transact → reauthorize + signAndSendTransactions
-  W->>U: tx summary, request biometrics
+  W->>U: tx summary, request approval
   U->>W: approve
   W->>S: broadcast signed tx
   W-->>A: tx signature
@@ -131,19 +131,19 @@ sequenceDiagram
 
 ## Hash, signature & encryption
 
-Three distinct tools: SHA‑256 is a **hash** (one‑way, not encryption), Ed25519 is a **signature**, AES‑GCM is real **encryption** used only for the shared file.
+Three distinct tools: SHA‑256 is a **hash** (one‑way, not encryption), Ed25519 is a **signature**, AES‑GCM is real **encryption**, designed for shared files (not yet implemented).
 
 | Tool | For | Computed | Proves |
 | --- | --- | --- | --- |
 | SHA‑256 | File fingerprint | Phone (`expo-crypto`/`react-native-quick-crypto`) and browser (`crypto.subtle.digest`) | The file didn't change |
-| Ed25519 signature | Sign the Solana tx | Hardware wallet | This wallet sealed it |
+| Ed25519 signature | Sign the Solana tx | MWA wallet | This wallet sealed it |
 | Solana block time | Timestamp | Chain (`Clock` sysvar) | Existed no later than this |
-| SHA‑256 commitment | Hide location | Phone: `sha256(lat_e5 \| lon_e5 \| 16-byte salt)` | If revealed later, "they claimed this location then" |
-| AES‑256‑GCM | Keep the shared file encrypted in Supabase | Encrypt on phone, decrypt in browser | The server can't read the file |
+| SHA‑256 commitment | Hide location (planned) | Phone: `sha256(lat_e5 \| lon_e5 \| 16-byte salt)`; not computed yet, the app sends `null` | If revealed later, "they claimed this location then" |
+| AES‑256‑GCM (planned) | Keep the shared file encrypted in Supabase | Encrypt on phone, decrypt in browser | The server can't read the file |
 
 **Hash rule:** SHA‑256 of the file's final raw bytes, lowercase hex (64 chars). Written as 32 bytes on chain. The same file produces the same result on the phone, in the browser, and via `shasum -a 256`.
 
-**End‑to‑end encrypted sharing (additive):**
+**End‑to‑end encrypted sharing (additive).** **Status: designed, not yet implemented.** The `upload-url` Edge Function and the private Storage bucket exist, but the app does not encrypt or upload files and the web has no `/v/` route yet.
 
 1. The phone generates a random 256‑bit key and encrypts the file with AES‑256‑GCM.
 2. Only the encrypted file is uploaded to Supabase Storage.
@@ -156,11 +156,11 @@ The sealed hash is of the **unencrypted** original; encryption is only for trans
 
 ## Supabase
 
-Not on the critical path: verification only reads the chain. Supabase holds the transcript, the shared file, and the hash → transaction mapping. **Even if Supabase is lost, no proof is lost.**
+Not on the critical path: verification only reads the chain. Supabase holds the transcript and the hash → transaction mapping (and, once encrypted sharing ships, the encrypted file). **Even if Supabase is lost, no proof is lost.**
 
-**Table `recordings`** (primary key `audio_hash`): `tx_signature`, `wallet`, `pda`, `duration_ms`, `anchored_at` (cache of chain time), `transcript`, `transcript_lang` (`tr`/`en`), `transcript_status` (`pending`/`done`/`failed`/`skipped`), `mime_type`, `storage_path` (only if shared), `is_encrypted`, `has_genesis_token`, `created_at`.
+**Table `recordings`** (primary key `audio_hash`): `tx_signature`, `wallet`, `pda`, `duration_ms`, `anchored_at` (cache of chain time), `transcript`, `transcript_lang` (`tr`/`en`), `transcript_status` (`pending`/`done`/`failed`/`skipped`), `mime_type`, `storage_path` / `is_encrypted` (reserved for encrypted sharing, unused today), `has_genesis_token` (reserved, always false for now), `created_at`.
 
-**Storage:** private `recordings` bucket, path `<audio_hash>.m4a.enc` (same path for any type; the file is encrypted so the extension is meaningless, the real type is in `mime_type`). Reads via a 1‑hour signed URL; writes only through an Edge Function.
+**Storage (reserved for encrypted sharing, roadmap):** private `recordings` bucket, path `<audio_hash>.m4a.enc` (same path for any type; the file is encrypted so the extension is meaningless, the real type is in `mime_type`). Reads via a 1‑hour signed URL; writes only through an Edge Function.
 
 **Edge Functions:**
 
@@ -168,7 +168,7 @@ Not on the critical path: verification only reads the chain. Supabase holds the 
 | --- | --- | --- |
 | `register` | `audio_hash`, `tx_signature`, `wallet`, `mime_type?` | Reads the tx from devnet, verifies it's confirmed and the PDA's hash/wallet match, then inserts the row. No fake record can be added |
 | `transcribe` | `audio_hash` + audio/video file | Accepts audio/video only (photo/doc → 415, `skipped`). Sends to ElevenLabs Scribe, writes `transcript`. API key lives only here (Supabase secret) |
-| `upload-url` | `audio_hash` | For a registered recording, returns a one‑time upload URL for the encrypted file |
+| `upload-url` | `audio_hash` | For a registered recording, returns a one‑time upload URL for the encrypted file. Deployed, but no client calls it yet |
 
 **RLS:** anyone can read `recordings` (for the verification page), `anon` writes are off. All writes go through Edge Functions with the service role. No Sign‑In‑With‑Solana; `register`'s on‑chain check suffices for the hackathon.
 
@@ -178,7 +178,7 @@ Full API reference (request/response shapes, error codes): [`../supabase/README.
 
 Verification happens entirely in the browser. The file never goes to a server; the page reads directly from Solana RPC, so you don't have to trust us. Next.js + `@solana/web3.js`, deployed on Vercel.
 
-**Pages:** `/` (drag & drop) and `/v/<hash>` (share link; `#k=` auto‑downloads and decrypts, otherwise the user uploads the file).
+**Pages:** `/` (drag & drop). Planned: `/v/<hash>` (share link; `#k=` auto‑downloads and decrypts, otherwise the user uploads the file). Step 5 and the `/v/hash` branch below describe that planned page.
 
 **Steps:**
 
@@ -202,7 +202,7 @@ flowchart TD
   C -- no --> X2[❌ Not that record]
 ```
 
-**Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link; duration, tx link, transcript. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
+**Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link; duration, tx link. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
 
 ## Interface contracts
 
@@ -213,7 +213,7 @@ flowchart TD
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` |
 | Package versions | `@coral-xyz/anchor` **0.31.x** (app + web, to read the program's IDL), `@solana/web3.js` **1.x**, Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, not Expo Go |
 | Time | Unix seconds (`i64`) on chain, local time in UI |
-| Share link | `/v/<hash>` + optional `#k=<key>` |
+| Share link | `/v/<hash>` + optional `#k=<key>` (roadmap) |
 | Secrets | ElevenLabs and Supabase service keys only in Supabase secrets; repo ships only `.env.example` |
 
 ## Threats & design decisions
@@ -222,15 +222,15 @@ flowchart TD
 | --- | --- |
 | Phone hash ≠ browser hash | Cross‑check (phone / browser / `shasum`); the file never changes after sealing |
 | Location left in the clear on chain | Off by default; only a commitment is ever written |
-| Transcription exposes audio | Audio goes to ElevenLabs only for opt‑in transcription; stated in the pitch, toggleable |
+| Transcription exposes audio | Audio goes to ElevenLabs only for opt‑in transcription; stated in the pitch; only audio/video is ever sent |
 
-**Closed decisions:** transcript hash is not written on chain (`attach_transcript` removed); location is never written in the clear; audio stays on the phone by default, encrypted if shared; separate wallet approval per seal.
+**Closed decisions:** transcript hash is not written on chain (`attach_transcript` removed); location is never written in the clear; audio stays on the phone by default (encrypted sharing is on the roadmap); separate wallet approval per seal.
 
 ## Demo (~90 s)
 
 1. Problem: "Today you can't prove whether a recording was trimmed after the fact."
-2. Record 10 s (or pick a photo) → biometric approval → Sealed, Explorer link.
-3. Transcript appears on screen.
+2. Record 10 s (or pick a photo) → wallet approval → Sealed, Explorer link.
+3. Transcript appears in the app.
 4. Verification page: original file → ✅ match, time, wallet.
 5. Trim one second / change one byte, re‑upload → ❌ no match.
 6. Close: who it's for (journalists, tenants, harassment victims), why Seeker, what we don't claim.

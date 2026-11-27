@@ -40,7 +40,7 @@ supabase functions deploy register transcribe upload-url --no-verify-jwt
 | `migrations/…_any_file_type.sql` | Any file type: `mime_type` column, `transcript_status = 'skipped'` |
 | `functions/register` | Reads the tx from devnet, inserts the row only if the PDA's hash/wallet match |
 | `functions/transcribe` | Audio/video only → ElevenLabs Scribe → `transcript`. API key lives only here |
-| `functions/upload-url` | One‑time signed upload URL for the encrypted file of a registered recording |
+| `functions/upload-url` | One‑time signed upload URL for the encrypted file of a registered recording (no client calls it yet) |
 
 ## `register` API
 
@@ -104,6 +104,8 @@ The result is also written to `recordings` (`transcript`, `transcript_lang`, `tr
 Known limit: two **simultaneous** requests for the same record can both reach ElevenLabs before the first responds. Fine as long as the app makes one call per record.
 
 ## `upload-url` API — encrypted sharing
+
+> **Status: designed, not yet implemented on the client.** The function is deployed, but the app does not encrypt or upload files yet. The flow below is the intended design.
 
 When the user taps "Share": the phone encrypts the file with AES‑256‑GCM → gets a one‑time permit from `upload-url` → uploads the encrypted file. The server can't decrypt it; the key lives only in the share link's `#k=` fragment.
 

@@ -21,14 +21,14 @@ npm run dev
 ## Pages
 
 - `/` — drag & drop; "your file never leaves your computer".
-- `/v/<hash>` — share link. With `#k=` it downloads the encrypted file, decrypts, and verifies; otherwise the user uploads the file themselves.
+- `/v/<hash>` (roadmap, not built yet) — share link. With `#k=` it downloads the encrypted file, decrypts, and verifies; otherwise the user uploads the file themselves.
 
 ## Verification steps
 
 1. SHA‑256 of the file's raw bytes → lowercase hex (`lib/hash.ts` → `sha256HexOfFile`; see large files below).
 2. `PublicKey.findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`.
 3. `getAccountInfo(pda)` → missing ❌ / present → decode `Recording` with the Anchor coder ✅.
-4. On `/v/<hash>`, if the uploaded file's hash differs from the URL hash → ❌ "this is not that record".
+4. (Planned `/v/<hash>` page) if the uploaded file's hash differs from the URL hash → ❌ "this is not that record".
 
 Footer, always: *"This page proves the content was not altered after sealing — not that it is true."*
 
