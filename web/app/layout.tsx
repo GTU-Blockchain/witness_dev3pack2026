@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Witness — Doğrulama',
-  description: 'Bir dosyanın mühürlendikten sonra değişmediğini kanıtlar.',
+  title: 'Witness — Verification',
+  description: "Proves a file hasn't changed since it was sealed.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr">
+    <html lang="en">
       <head>
         {/* Gövde metni hemen lazım; ilk boyamada yazı tipi değişimini azaltır (yerel dosya, harici istek yok) */}
         <link rel="preload" href="/fonts/google-sans-flex-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
