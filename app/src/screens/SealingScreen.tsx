@@ -329,7 +329,7 @@ function SealedView({
       <View style={styles.card}>
         <View style={styles.cardRow}>
           <Text style={styles.eyebrow}>LOCATION</Text>
-          <Text style={styles.valueMono}>{locationEnabled ? 'Location Stamped' : 'Location Hidden'}</Text>
+          <Text style={styles.valueMono}>{locationEnabled ? 'Location not recorded' : 'Location Hidden'}</Text>
         </View>
         <View style={styles.cardRow}>
           <Text style={styles.eyebrow}>DURATION</Text>
@@ -343,7 +343,7 @@ function SealedView({
         <View style={styles.card}>
           <View style={styles.cardRow}>
             <Text style={styles.eyebrow}>ELEVENLABS AI TRANSCRIPT</Text>
-            <Pill label="SIGNED" tone="green" />
+            <Pill label="NOT ON CHAIN" tone="green" />
           </View>
           <Text style={styles.bodyText} numberOfLines={3}>
             &quot;{transcript}&quot;
@@ -377,7 +377,7 @@ function SealedActions({
   }
 
   function share() {
-    const lines = ['Audio evidence sealed on Solana with Witness.']
+    const lines = ['File sealed on Solana with Witness.']
     if (hash) lines.push(`SHA-256: ${hash}`)
     if (verificationUrl) lines.push(`Verify: ${verificationUrl}`)
     void Share.share({ message: lines.join('\n') })
