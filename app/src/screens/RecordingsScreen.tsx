@@ -125,7 +125,7 @@ function RecordingCard({
         <View style={styles.details}>
           <View style={styles.row}>
             <Text style={styles.eyebrow}>LOCATION</Text>
-            <Text style={styles.valueMono}>{item.locationEnabled ? 'Location Stamped' : 'Location Hidden'}</Text>
+            <Text style={styles.valueMono}>{item.locationEnabled ? 'Location not recorded' : 'Location Hidden'}</Text>
           </View>
 
           {item.hash ? (

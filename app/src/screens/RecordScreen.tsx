@@ -55,7 +55,7 @@ export function RecordScreen({
   playbackMillis = 0,
   streamHash,
   transcript,
-  transcriptLabel = 'ELEVENLABS LIVE TRANSCRIPT',
+  transcriptLabel = 'TRANSCRIPT (ELEVENLABS)',
   transcriptTag,
   networkLabel = 'Solana Devnet',
   walletLabel = 'Not connected',
@@ -112,10 +112,10 @@ export function RecordScreen({
                 <View style={styles.recDot} />
                 <Text style={styles.recBadgeText}>RECORDING</Text>
               </View>
-              <Text style={styles.cardValueSecondary}>{locationEnabled ? 'Location Stamped' : 'Location Hidden'}</Text>
+              <Text style={styles.cardValueSecondary}>{locationEnabled ? 'Location not recorded yet' : 'Location Hidden'}</Text>
             </View>
             <Text style={styles.hashText} numberOfLines={1}>
-              STREAM SHA-256: {streamHash ? `${streamHash.slice(0, 16)}...` : 'computing...'}
+              SHA-256: {streamHash ? `${streamHash.slice(0, 16)}...` : 'computed when you seal'}
             </Text>
           </View>
         ) : (
@@ -170,7 +170,7 @@ export function RecordScreen({
                     {transcriptTag ? <Text style={styles.transcriptTag}>{transcriptTag}</Text> : null}
                   </View>
                   <Text style={[styles.transcriptText, !transcript && styles.transcriptPlaceholder]} numberOfLines={3}>
-                    {transcript ? `"${transcript}"` : 'Listening...'}
+                    {transcript ? `"${transcript}"` : 'Transcript will be generated after sealing'}
                   </Text>
                 </View>
               </View>
@@ -179,7 +179,7 @@ export function RecordScreen({
               <View style={styles.centerStage}>
                 <Text style={styles.statusEyebrow}>{statusHeadline}</Text>
                 <Text style={styles.timerText}>{formatDuration(timerMillis)}</Text>
-                <Text style={styles.formatSubtitle}>44.1 kHz AAC • SHA-256 Real-Time</Text>
+                <Text style={styles.formatSubtitle}>44.1 kHz AAC • SHA-256 is computed when you seal</Text>
 
                 {captured ? (
                   <Pressable
@@ -211,9 +211,9 @@ export function RecordScreen({
                     color={C.emerald}
                   />
                   <View style={styles.locationTextGroup}>
-                    <Text style={styles.eyebrow}>GPS LOCATION STAMP</Text>
+                    <Text style={styles.eyebrow}>GPS LOCATION STAMP (COMING SOON)</Text>
                     <Text style={styles.locationTitle}>
-                      {locationEnabled ? 'Location Stamp Enabled' : 'Location Stamp Disabled'}
+                      {locationEnabled ? 'On, but no location is recorded yet' : 'Location Stamp Disabled'}
                     </Text>
                   </View>
                   <Text style={[styles.locationStateText, locationEnabled && styles.locationStateTextActive]}>
