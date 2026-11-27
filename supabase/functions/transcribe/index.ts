@@ -134,6 +134,8 @@ Deno.serve(async (req: Request) => {
   // --- 3. ElevenLabs Scribe ---
   const upstream = new FormData();
   upstream.append("model_id", ELEVENLABS_MODEL);
+  // Gürültüyü "[konuşma sesi]" gibi etiketlerle yazıya dökmesin; sessiz/gürültülü kayıtta metin boş kalır.
+  upstream.append("tag_audio_events", "false");
   upstream.append("file", new Blob([bytes], { type: file.type || "audio/mp4" }), file.name || "recording.m4a");
 
   let result: { text?: string; language_code?: string };
@@ -156,8 +158,12 @@ Deno.serve(async (req: Request) => {
     return fail(502, "transcription_failed", "ElevenLabs'e ulaşılamadı ya da zaman aşımı");
   }
 
-  const transcript = (result.text ?? "").trim();
-  const transcriptLang = LANG_MAP[(result.language_code ?? "").toLowerCase()] ?? null;
+  const detectedLang = (result.language_code ?? "").toLowerCase();
+  const transcriptLang = LANG_MAP[detectedLang] ?? null;
+  // Witness sadece Türkçe/İngilizce destekler. Başka dil algılandıysa bu neredeyse hep gürültünün yanlış
+  // okunmasıdır (sessiz emülatör kaydı Hintçe "[belirsiz ses]" dönüyordu); anlamsız metin göstermek yerine boş bırak.
+  const transcript = transcriptLang ? (result.text ?? "").trim() : "";
+  if (!transcriptLang) console.warn("unsupported transcript language, dropped", detectedLang || "(none)");
 
   // --- 4. Sonucu yaz ---
   const { error: updateError } = await supabase

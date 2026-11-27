@@ -69,7 +69,9 @@
         {
           "androidIntentFilters": [
             "audio/*",
-            "image/*"
+            "image/*",
+            "video/*",
+            "application/pdf"
           ],
           "androidMainActivityAttributes": {
             "android:launchMode": "singleTask"
