@@ -32,6 +32,7 @@ function SealFlow({ id, walletLabel }: { id: string; walletLabel: string }) {
       locationEnabled={seal.locationEnabled}
       slot={seal.slot}
       explorerUrl={seal.explorerUrl}
+      transcript={seal.transcript}
       walletLabel={walletLabel}
       onApprove={seal.approve}
       onRetry={seal.retry}

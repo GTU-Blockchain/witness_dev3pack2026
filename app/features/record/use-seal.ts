@@ -4,7 +4,8 @@ import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import type { SealStep } from '@/src/screens/SealingScreen'
 import { sha256HexOfFile } from '@/utils/witness-hash'
 import { buildRegisterRecordingIx } from '@/utils/witness-program'
-import { getRecording, updateRecording } from '@/features/record/recordings-store'
+import { getRecording, updateRecording, useRecordings } from '@/features/record/recordings-store'
+import { syncRecordingToBackend } from '@/features/record/backend-sync'
 
 // Kayıt hesabının kirası (~0.0018 SOL) + işlem ücreti için pay bırakılmış alt sınır.
 const MIN_BALANCE_LAMPORTS = 0.003 * LAMPORTS_PER_SOL
@@ -80,6 +81,8 @@ export function useSeal(id: string) {
   // Ekran açılınca hash'i hesapla (daha önce hesaplanmadıysa). Sadece ilk açılışta.
   useEffect(() => {
     if (!initial?.hash && initial?.status !== 'sealed') computeHash()
+    // Daha önce mühürlenmiş ama Supabase'e yazılamamış / transkripti gelmemiş kayıt: arka planda tekrar dene.
+    if (initial?.status === 'sealed') void syncRecordingToBackend(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -124,10 +127,13 @@ export function useSeal(id: string) {
       updateRecording(id, {
         status: 'sealed',
         signature,
+        wallet: payer.toBase58(),
         slot: result.context.slot,
         explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=${cluster}`,
       })
       setStep('sealed')
+      // Supabase'e kayıt + transkript: arka planda, mühürlemeyi bekletmez.
+      void syncRecordingToBackend(id)
     } catch (e) {
       setError(errorMessage(e))
     }
@@ -145,7 +151,8 @@ export function useSeal(id: string) {
     }
   }
 
-  const rec = getRecording(id)
+  // Store'a abone ol: transkript arka planda gelince ekran güncellensin.
+  const rec = useRecordings().find((r) => r.id === id)
   return {
     step,
     error,
@@ -154,6 +161,7 @@ export function useSeal(id: string) {
     locationEnabled: rec?.locationEnabled ?? false,
     slot: rec?.slot,
     explorerUrl: rec?.explorerUrl,
+    transcript: rec?.transcript,
     attempt,
     approve: () => void approve(),
     retry,
