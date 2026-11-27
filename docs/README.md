@@ -1,7 +1,12 @@
 # /docs
 
-- [`TEKNIK_DOKUMAN.md`](TEKNIK_DOKUMAN.md): mimari, hesap yapısı, MWA akışı, hash/şifreleme, Supabase, doğrulama sayfası, ortak kurallar. **Tek doğruluk kaynağı.**
-- [`GOREV_PANOSU.md`](GOREV_PANOSU.md): 25–29 Kasım görev listesi (Notion'daki tablonun aynısı)
-- [`GOREV_DAGILIMI.md`](GOREV_DAGILIMI.md): görev panosundaki rollerin gerçek kişi sayısına (5 kişi) göre eşlenmiş, kişi bazlı yürütme planı
-- [`CLAUDE_CODE_PLAN_PROMPT.md`](CLAUDE_CODE_PLAN_PROMPT.md): her rolün kendi Claude Code planını çıkarması için prompt
-- [`MEMO_YEDEGI_SOZLESMESI.md`](MEMO_YEDEGI_SOZLESMESI.md): program deploy edilemezse `/v/<hash>?tx=<imza>` yedek doğrulama sözleşmesi (Rol 2+3 belirler, Rol 4 uygular)
+**Judge‑facing (English):**
+
+- [`TEKNIK_DOKUMAN.md`](TEKNIK_DOKUMAN.md) — technical source of truth: architecture, account layout, MWA flow, hash/encryption, Supabase, verification page, interface contracts.
+- [`MEMO_YEDEGI_SOZLESMESI.md`](MEMO_YEDEGI_SOZLESMESI.md) — `/v/<hash>?tx=<signature>` fallback verification contract if the program is ever unavailable.
+
+**Internal team planning (Turkish):**
+
+- [`GOREV_PANOSU.md`](GOREV_PANOSU.md) — 25–29 Nov task board.
+- [`GOREV_DAGILIMI.md`](GOREV_DAGILIMI.md) — per‑person execution plan mapped from roles to the real 5‑person team.
+- [`CLAUDE_CODE_PLAN_PROMPT.md`](CLAUDE_CODE_PLAN_PROMPT.md) — prompt for each role to derive its own plan.

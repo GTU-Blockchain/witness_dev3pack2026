@@ -1,355 +1,242 @@
-# Witness: Teknik Dokümantasyon
+# Witness — Technical Documentation
 
-_Güncelleme: 25 Kasım 2026_
+Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the user sign it with their hardware wallet (Seed Vault / Phantom via Mobile Wallet Adapter), and writes a record to Solana. Anyone can then verify the file hasn't changed since that moment. This is the single technical source of truth for the system.
 
-## Özet
+## What it proves
 
-Witness, Seeker'da alınan bir ses kaydının parmak izini (SHA-256) kullanıcının Seed Vault cüzdanıyla imzalayıp Solana'ya yazar. Böylece herkes kaydın o andan sonra değişmediğini doğrulayabilir. Önceden kod yazmak serbest olduğu için hedef şu: **MVP 26 Kasım akşamı çalışıyor olsun**, hackathon günleri (27–29 Kasım) ekstralara ve demoya kalsın.
-
-| Kanıt | Durum | Neye dayanıyor |
+| Claim | Status | Backed by |
 | --- | --- | --- |
-| Dosya en geç şu anda vardı | Kanıtlanır | Solana blok zamanı (`anchored_at`) |
-| O andan beri tek bayt değişmedi | Kanıtlanır | SHA-256 eşleşmesi |
-| Şu cüzdan kaydetti | Kanıtlanır | Ed25519 işlem imzası |
-| Gerçek bir Seeker cihazından | Güçlü işaret | Cüzdanda Seeker Genesis Token var |
-| Kayıt şu konumda alındı | Sadece beyan | Telefonun GPS'i, kriptografik değil |
-| Kaydın içeriği gerçek | Kanıtlanmaz | Hoparlörden sahte ses çalınabilir. "Sonradan oynanmadı" diyoruz, "gerçek" demiyoruz |
+| The file existed no later than now | Provable | Solana block time (`anchored_at`) |
+| Not one byte has changed since | Provable | SHA‑256 match |
+| This wallet sealed it | Provable | Ed25519 transaction signature |
+| From a genuine Seeker device | Strong hint | Seeker Genesis Token in the wallet |
+| Captured at this location | Claim only | Phone GPS, not cryptographic |
+| The content is real | Not provable | A speaker can play fake audio into a mic. We claim "unaltered", not "true" |
 
-**MVP:** kaydet → hash → Seed Vault onayı → zincire yaz → doğrulama sayfası ✅ / ❌. Bunun dışındaki her şey (transkript, paylaşım linki, Genesis rozeti, konum, ara hash) ekstradır.
+**Core loop:** record/share/pick → hash → hardware‑wallet approval → write to chain → verification page ✅ / ❌. Everything else (transcript, share link, Genesis badge, location, encrypted sharing) is additive.
 
-## Mimari
+## Architecture
 
-Kritik yol: uygulama → Seed Vault → program → PDA ← doğrulama sayfası. Supabase ve ElevenLabs (kesikli oklar) ekstradır; düşerlerse demo yine çalışır.
+Critical path: app → wallet → program → PDA ← verification page. Supabase and ElevenLabs (dashed) are additive; if they fail, the demo still works.
 
 ```mermaid
 flowchart LR
-  subgraph Seeker["Seeker telefonu"]
-    APP["Witness uygulaması<br/>Kaydet, SHA-256 hesapla<br/>İşlemi hazırla"]
-    SV["Seed Vault Wallet<br/>Özel anahtar donanımda<br/>Parmak iziyle imzalar"]
+  subgraph Phone["Seeker / Android"]
+    APP["Witness app<br/>record/share/pick, SHA-256<br/>build transaction"]
+    SV["Hardware wallet<br/>private key in secure HW<br/>signs with biometrics"]
   end
   subgraph Solana["Solana devnet"]
-    PROG["Witness programı<br/>register_recording<br/>Aynı hash bir kez"]
-    PDA["Recording PDA<br/>seed: rec + hash<br/>zaman, cüzdan, süre"]
+    PROG["Witness program<br/>register_recording<br/>one hash, once"]
+    PDA["Recording PDA<br/>seed: rec + hash<br/>time, wallet, duration"]
   end
-  WEB["Doğrulama sayfası<br/>Next.js, Vercel<br/>Dosyayı tarayıcıda hash'ler"]
+  WEB["Verification page<br/>Next.js, Vercel<br/>hashes file in-browser"]
   subgraph Supabase
     EF["Edge Functions<br/>register, transcribe, upload-url"]
-    DB["recordings + Storage<br/>transkript, tx imzası<br/>şifreli ses"]
+    DB["recordings + Storage<br/>transcript, tx signature<br/>encrypted audio"]
   end
-  EL["ElevenLabs Scribe<br/>Türkçe + İngilizce"]
+  EL["ElevenLabs Scribe<br/>Turkish + English"]
 
-  APP -- "MWA ile imzalat" --> SV
-  SV -- "imzalı işlem" --> PROG
+  APP -- "sign via MWA" --> SV
+  SV -- "signed tx" --> PROG
   PROG -- init --> PDA
-  WEB -- "RPC'den okur" --> PDA
-  APP -. "kayıt bilgisi (ekstra)" .-> EF
+  WEB -- "read via RPC" --> PDA
+  APP -. "register (additive)" .-> EF
   EF --> DB
-  EF -. transkripsiyon .-> EL
+  EF -. transcription .-> EL
 ```
 
-Doğrulama sayfası transkripti ve şifreli dosyayı Supabase'den okur, ama ✅ / ❌ kararını sadece zincirdeki PDA'ya bakarak verir.
+The verification page reads the transcript and encrypted file from Supabase, but makes the ✅ / ❌ decision **only** from the on‑chain PDA.
 
-## Mobil uygulama ve UI
+## Mobile app & UI
 
-Uygulamada 5 ekran var; MVP için ilk üçü yeterli. Stack: React Native + Expo dev build (Expo Go'da MWA çalışmaz), Solana Mobile Expo şablonu.
+Stack: React Native + Expo **dev build** (MWA does not work in Expo Go), Solana Mobile Expo template.
 
-| Ekran | Olması gerekenler | MVP mi? |
+| Screen | Contents | MVP? |
 | --- | --- | --- |
-| 1. Cüzdan bağla | "Cüzdanı bağla" butonu, bağlanınca kısaltılmış adres (`7xKq…a9F2`), devnet etiketi, SOL bakiyesi, bakiye düşükse faucet uyarısı | Evet |
-| 2. Kayıt | Büyük kaydet / durdur butonu, süre sayacı, ses seviyesi göstergesi, durdurunca dinle butonu, "Mühürle" ve "Sil" butonları, konum anahtarı (varsayılan kapalı) | Evet |
-| 3. Mühürleme durumu | Adım adım ilerleme: Hash hesaplanıyor → Cüzdan onayı bekleniyor → Zincire yazılıyor → ✅ Mühürlendi. Hash'in ilk 8 karakteri, Explorer linki, "Paylaş" butonu. Hata olursa sebebi ve "Tekrar dene" | Evet |
-| 4. Kayıt listesi | Her satırda tarih, süre, durum rozeti (Mühürlendi / Bekliyor / Hata), transkriptin ilk satırı | Ekstra |
-| 5. Kayıt detayı | Oynatıcı, tam hash (kopyala), işlem imzası, zincir zamanı, transkript, paylaşım linki, Seeker rozeti | Ekstra |
+| Connect wallet | "Connect" button, shortened address (`7xKq…a9F2`), devnet badge, SOL balance, faucet hint if low | Yes |
+| Record | Big record/stop button, timer, level meter, playback after stop, "Seal"/"Delete", location toggle (off by default) | Yes |
+| Seal status | Step‑by‑step: Hash → Waiting for wallet approval → Writing to chain → ✅ Sealed. First 8 hex chars, Explorer link, Share. Error + Retry | Yes |
+| My Recordings | Date, duration, status badge (Sealed / Pending / Error), first transcript line | Extra |
+| Recording detail | Player, full hash (copy), tx signature, chain time, transcript, share link, Seeker badge | Extra |
 
-**Kullanıcı akışı:**
+**User flow:** open → connect wallet once (MWA `authorize`, token cached) → record/stop/playback → Seal (app computes hash) → hardware approval (biometric) → tx goes to devnet → Sealed screen with Explorer + share link.
 
-1. Uygulamayı aç → cüzdanı bir kez bağla (MWA `authorize`, auth token saklanır)
-2. Kaydet → Durdur → dinle
-3. Mühürle → uygulama hash'i hesaplar
-4. Seed Vault onayı (parmak izi / çift dokunma) → işlem devnet'e gider
-5. Mühürlendi ekranı → Explorer linki, paylaşım linki
+**Three entry points, one pipeline:** in‑app recording, OS share ("Share → Witness"), and the in‑app file picker ("Seal an existing file") all copy the file untouched and flow into the same `/seal` pipeline.
 
-**UI kuralları:**
+**UI rules:**
 
-- Dosya mühürlendikten sonra uygulama onu asla yeniden kodlamaz, kırpmaz, metadata eklemez. Oynatma ve paylaşım aynı bayt dizisini kullanır.
-- Zincire yazma başarısız olursa kayıt silinmez, "Bekliyor" durumunda kalır ve tekrar denenebilir.
-- Transkript gelmesini beklemeden Mühürlendi ekranı gösterilir; transkript gelince ekrana eklenir.
+- After sealing, the app never re‑encodes, trims, or re‑tags the file. Playback and sharing use the same byte sequence.
+- If writing to chain fails, the recording is not deleted — it stays "Pending" and can be retried.
+- The Sealed screen shows without waiting for the transcript; the transcript is added when it arrives.
 
-## Solana programı (akıllı sözleşme)
+## Solana program
 
-Programın tek işi, her ses hash'i için bir kez yazılabilen ve hash'ten bulunabilen bir kayıt hesabı açmak. Anchor ile yazılır, devnet'te çalışır. Kanıt program olmadan da mümkün (Memo); program şu üç şeyi ekliyor: sadece dosyayla doğrulama, aynı hash'in ikinci kez yazılamaması ve tipli veri.
+Written in Anchor, running on devnet. Proof is possible without the program (Memo), but the program adds: verification from the file alone, no double‑sealing of the same hash, and typed data.
 
-**Hesap: `Recording`**, seed'ler `["rec", audio_hash]`
+**Account `Recording`**, seeds `["rec", audio_hash]`:
 
 ```rust
 #[account]
 pub struct Recording {
-    pub authority: Pubkey,                        // kaydeden cüzdan
-    pub audio_hash: [u8; 32],                     // dosyanın SHA-256'sı
-    pub recorded_at: i64,                         // telefon saati (beyan)
-    pub anchored_at: i64,                         // Clock::get()?.unix_timestamp (asıl kanıt)
+    pub authority: Pubkey,                     // sealing wallet
+    pub audio_hash: [u8; 32],                  // SHA-256 of the file
+    pub recorded_at: i64,                       // phone time (claimed)
+    pub anchored_at: i64,                        // Clock::get()?.unix_timestamp (the real proof)
     pub duration_ms: u32,
-    pub location_commitment: Option<[u8; 32]>,    // sha256(lat|lon|salt), açık koordinat değil
+    pub location_commitment: Option<[u8; 32]>,  // sha256(lat|lon|salt), not raw coordinates
     pub bump: u8,
 }
-// boyut: 8 (discriminator) + 32 + 32 + 8 + 8 + 4 + 33 + 1 = 126 bayt
+// size: 8 (discriminator) + 32 + 32 + 8 + 8 + 4 + 33 + 1 = 126 bytes
 ```
 
-**Instruction'lar**
-
-| Instruction | Kim çağırır | Ne yapar | Hata durumları |
+| Instruction | Caller | Effect | Failure |
 | --- | --- | --- | --- |
-| `register_recording(audio_hash, recorded_at, duration_ms, location_commitment)` | Kaydeden cüzdan (signer + payer) | PDA'yı `init` ile açar, alanları yazar, `anchored_at`'i zincir saatinden alır, `RecordingRegistered` event'i yayar | PDA zaten varsa işlem başarısız (aynı hash ikinci kez yazılamaz). `duration_ms == 0` ise `InvalidDuration` |
-| ~~`attach_transcript(transcript_hash)`~~ | — | **Yazılmıyor.** Kullanıcıdan ikinci bir parmak izi isterdi. Transkript Supabase'de durur | — |
+| `register_recording(audio_hash, recorded_at, duration_ms, location_commitment)` | Sealing wallet (signer + payer) | `init`s the PDA, writes fields, takes `anchored_at` from the on‑chain clock, emits `RecordingRegistered` | PDA already exists → fails (no double‑seal). `duration_ms == 0` → `InvalidDuration` |
 
-**Okuma tarafı (web ve uygulama):** PDA adresi `PublicKey.findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)` ile hesaplanır. Hesap yoksa "Bu dosya mühürlenmemiş" denir, varsa Anchor coder ile çözülür.
+**Read side:** derive the PDA with `findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`. No account → "not sealed"; present → decode with the Anchor coder.
 
-**Yedek plan: SPL Memo.** Program 26 Kasım öğlene kadar deploy edilemezse uygulama işlemi Memo programına `witness:v1:<hash hex>` metniyle gönderir. Bu durumda doğrulama için işlem imzası gerekir; hash → imza eşleşmesini Supabase tutar ve paylaşım linkine `?tx=` olarak eklenir.
+**Deliberately omitted:** account close (proof can't be deleted), update instruction (immutability), admin key. Upgrade authority stays with the team on devnet; on mainnet the program would be immutable.
 
-**Bilerek yapılmayanlar:** hesap kapatma (kanıt silinemesin), güncelleme instruction'ı (değişmezlik), admin anahtarı. Upgrade authority devnet'te ekipte kalır; pitch'te "mainnet'te immutable yaparız" denir.
+**Memo fallback (SPL Memo):** if the program is ever unavailable, the app sends a Memo tx with text `witness:v1:<hash hex>`. Verification then needs the tx signature; the hash → signature mapping is kept by Supabase and added to the share link as `?tx=`. Full spec: [`MEMO_YEDEGI_SOZLESMESI.md`](MEMO_YEDEGI_SOZLESMESI.md).
 
-## Cüzdan entegrasyonu (MWA + Seed Vault)
+## Wallet integration (MWA + hardware wallet)
 
-Uygulama özel anahtara hiç dokunmaz. İşlemi hazırlar, Mobile Wallet Adapter ile Seed Vault Wallet'a gönderir, kullanıcı parmak iziyle onaylar, cüzdan imzalayıp ağa yollar.
+The app never touches the private key. It builds the transaction, sends it over Mobile Wallet Adapter to the hardware wallet, the user approves with biometrics, and the wallet signs and broadcasts.
 
 ```mermaid
 sequenceDiagram
-  participant U as Kullanıcı
-  participant A as Witness uygulaması
-  participant W as Seed Vault Wallet
+  participant U as User
+  participant A as Witness app
+  participant W as Hardware wallet
   participant S as Solana devnet
-  participant B as Supabase (ekstra)
-  U->>A: Kaydet / Durdur / Mühürle
-  A->>A: SHA-256 hesapla, PDA adresini bul
-  A->>A: register_recording işlemini kur (blockhash)
+  participant B as Supabase (additive)
+  U->>A: Record / Stop / Seal
+  A->>A: SHA-256, derive PDA
+  A->>A: build register_recording tx (blockhash)
   A->>W: transact → reauthorize + signAndSendTransactions
-  W->>U: İşlem özeti, parmak izi iste
-  U->>W: Onay
-  W->>S: İmzalı işlemi gönder
-  W-->>A: İşlem imzası
-  A->>S: confirmTransaction, PDA'yı oku
-  A-->>U: ✅ Mühürlendi + Explorer linki
-  A-)B: register(hash, imza, cüzdan)
+  W->>U: tx summary, request biometrics
+  U->>W: approve
+  W->>S: broadcast signed tx
+  W-->>A: tx signature
+  A->>S: confirmTransaction, read PDA
+  A-->>U: ✅ Sealed + Explorer link
+  A-)B: register(hash, signature, wallet)
 ```
 
-**Teknik notlar:**
+**Notes:**
 
-- Paketler: `@solana-mobile/mobile-wallet-adapter-protocol-web3js`, `@solana/web3.js`, `@coral-xyz/anchor` (instruction kodlama için)
-- İlk bağlantıda `authorize({ cluster: "devnet", identity: { name: "Witness", uri, icon } })`. Dönen `auth_token` saklanır, sonraki kayıtlarda `reauthorize` ile bağlanma ekranı tekrar çıkmaz.
-- Her kayıt için ayrı onay gerekir. Bu bir özellik: her mühür kullanıcının bilinçli onayı.
-- Seed Vault SDK'ya doğrudan erişim sadece cüzdan uygulamalarına açık; biz yalnızca MWA kullanıyoruz.
-- **Seeker Genesis Token rozeti** (ekstra): cüzdanın token hesapları okunur, Genesis Token mint'i varsa rozet gösterilir. Ek imza yok. Mint adresi Solana Mobile dokümanından teyit edilecek.
-- Test yedeği: Seeker erişilemezse Android emülatör + mock wallet.
+- Packages: `@solana-mobile/mobile-wallet-adapter-protocol-web3js`, `@solana/web3.js`, `@coral-xyz/anchor` (instruction encoding).
+- First connect: `authorize({ cluster: "devnet", identity: { name: "Witness", uri, icon } })`. The returned `auth_token` is cached; later seals use `reauthorize`, so the connect screen doesn't reappear.
+- Separate approval per seal — a feature: each seal is a conscious consent.
+- **MWA dApp identity:** wallets like Phantom verify the dApp over Android App Links. On an emulator this additionally requires the APK to carry a **v1 (JAR) signature** (Phantom reads the caller cert via the legacy path); AGP ignores `enableV1Signing` for `minSdk ≥ 24`, so the APK must be re‑signed with `apksigner … --v1-signing-enabled true --min-sdk-version 21`. The dApp `uri`, the domain's `assetlinks.json`, and the `autoVerify` intent‑filter must all stay consistent.
+- Fallback: if a device is unavailable, Android emulator + Phantom/mock wallet.
 
-## Hash, imza ve şifreleme
+## Hash, signature & encryption
 
-Üç farklı araç var: SHA-256 bir **hash**'tir (şifreleme değil, geri çevrilemez), Ed25519 bir **imza**dır, AES-GCM ise gerçek **şifreleme**dir ve sadece paylaşılan dosya için kullanılır.
+Three distinct tools: SHA‑256 is a **hash** (one‑way, not encryption), Ed25519 is a **signature**, AES‑GCM is real **encryption** used only for the shared file.
 
-| Araç | Ne için | Nerede hesaplanır | Kanıtladığı |
+| Tool | For | Computed | Proves |
 | --- | --- | --- | --- |
-| SHA-256 | Ses dosyasının parmak izi | Telefonda (`expo-crypto` / `react-native-quick-crypto`) ve tarayıcıda (`crypto.subtle.digest`) | Dosya değişmedi |
-| Ed25519 imza | Solana işlemini imzalamak | Seed Vault (güvenli donanım) | Şu cüzdan kaydetti |
-| Solana blok zamanı | Zaman damgası | Zincir (`Clock` sysvar) | En geç bu anda vardı |
-| SHA-256 commitment | Konumu gizlemek | Telefonda: `sha256(lat_e5 \| lon_e5 \| 16 bayt rastgele salt)` | Konum sonradan açıklanırsa "bu konumu o zaman beyan etmişti" |
-| AES-256-GCM | Paylaşılan ses dosyasını Supabase'de şifreli tutmak (ekstra) | Telefonda şifrelenir, tarayıcıda çözülür | Sunucu dosyayı dinleyemez |
+| SHA‑256 | File fingerprint | Phone (`expo-crypto`/`react-native-quick-crypto`) and browser (`crypto.subtle.digest`) | The file didn't change |
+| Ed25519 signature | Sign the Solana tx | Hardware wallet | This wallet sealed it |
+| Solana block time | Timestamp | Chain (`Clock` sysvar) | Existed no later than this |
+| SHA‑256 commitment | Hide location | Phone: `sha256(lat_e5 \| lon_e5 \| 16-byte salt)` | If revealed later, "they claimed this location then" |
+| AES‑256‑GCM | Keep the shared file encrypted in Supabase | Encrypt on phone, decrypt in browser | The server can't read the file |
 
-**Hash kuralı:** dosyanın son halinin ham baytlarının SHA-256'sı, küçük harf hex (64 karakter). Zincire 32 bayt olarak yazılır. Aynı dosya telefonda, tarayıcıda ve `shasum -a 256` ile aynı sonucu vermeli.
+**Hash rule:** SHA‑256 of the file's final raw bytes, lowercase hex (64 chars). Written as 32 bytes on chain. The same file produces the same result on the phone, in the browser, and via `shasum -a 256`.
 
-**Paylaşım için uçtan uca şifreleme (ekstra):**
+**End‑to‑end encrypted sharing (additive):**
 
-1. Telefon rastgele 256 bitlik bir anahtar üretir, dosyayı AES-256-GCM ile şifreler
-2. Sadece şifreli dosya Supabase Storage'a yüklenir
-3. Paylaşım linki: `/v/<hash>#k=<anahtar base64url>`. `#` sonrası tarayıcıdan sunucuya hiç gitmez, yani Supabase ve Vercel anahtarı görmez
-4. Doğrulama sayfası şifreli dosyayı indirir, anahtarla tarayıcıda çözer, hash'ler, zincirle karşılaştırır
+1. The phone generates a random 256‑bit key and encrypts the file with AES‑256‑GCM.
+2. Only the encrypted file is uploaded to Supabase Storage.
+3. Share link: `/v/<hash>#k=<key base64url>`. Everything after `#` never leaves the browser, so Supabase and Vercel never see the key.
+4. The verification page downloads the encrypted file, decrypts it in‑browser, hashes it, and compares to the chain.
 
-Mühürlenen hash **şifrelenmemiş** orijinal dosyanındır; şifreleme sadece taşıma ve saklama içindir.
+The sealed hash is of the **unencrypted** original; encryption is only for transport and storage.
 
-**Gizlilik:** zincire sadece hash, zaman, süre ve (isteğe bağlı) konum commitment'ı yazılır. Ses, transkript ve açık koordinat asla zincire gitmez. Varsayılan olarak ses sadece telefonda kalır.
+**Privacy:** only the hash, time, duration, and (optional) location commitment go on chain. Audio, transcript, and raw coordinates never do. By default audio stays only on the phone.
 
 ## Supabase
 
-Supabase MVP'nin kritik yolunda değil: doğrulama sadece zincire bakar. Supabase transkripti, paylaşılan dosyayı ve hash → işlem eşleşmesini tutar. **Supabase kaybolsa bile hiçbir kanıt kaybolmaz.**
+Not on the critical path: verification only reads the chain. Supabase holds the transcript, the shared file, and the hash → transaction mapping. **Even if Supabase is lost, no proof is lost.**
 
-**Tablo: `recordings`**
+**Table `recordings`** (primary key `audio_hash`): `tx_signature`, `wallet`, `pda`, `duration_ms`, `anchored_at` (cache of chain time), `transcript`, `transcript_lang` (`tr`/`en`), `transcript_status` (`pending`/`done`/`failed`/`skipped`), `mime_type`, `storage_path` (only if shared), `is_encrypted`, `has_genesis_token`, `created_at`.
 
-| Kolon | Tip | Not |
+**Storage:** private `recordings` bucket, path `<audio_hash>.m4a.enc` (same path for any type; the file is encrypted so the extension is meaningless, the real type is in `mime_type`). Reads via a 1‑hour signed URL; writes only through an Edge Function.
+
+**Edge Functions:**
+
+| Function | Input | Behavior |
 | --- | --- | --- |
-| `audio_hash` | `text` primary key | 64 karakter küçük harf hex |
-| `tx_signature` | `text` not null | Mühürleme işlemi |
-| `wallet` | `text` not null | Base58 cüzdan adresi |
-| `pda` | `text` | Memo yedeğinde boş |
-| `duration_ms` | `int` | Fotoğraf gibi süresiz dosyalarda `1` (program `> 0` istiyor); sadece ses/videoda gösterilir |
-| `anchored_at` | `timestamptz` | Zincirden okunan zaman, önbellek |
-| `transcript` | `text` | ElevenLabs çıktısı |
-| `transcript_lang` | `text` | `tr`, `en` |
-| `transcript_status` | `text` | `pending` / `done` / `failed` / `skipped` (ses/video değil, transkript yapılmaz) |
-| `mime_type` | `text` | Dosya türü (`audio/mp4`, `image/jpeg`…). Uygulama `register`'da gönderir; doğrulama sayfası çözülen dosyayı buna göre gösterir. Boşsa ses varsayılır |
-| `storage_path` | `text` | Sadece kullanıcı paylaştıysa |
-| `is_encrypted` | `bool` default `true` | |
-| `has_genesis_token` | `bool` | Rozet önbelleği |
-| `created_at` | `timestamptz` default `now()` | |
+| `register` | `audio_hash`, `tx_signature`, `wallet`, `mime_type?` | Reads the tx from devnet, verifies it's confirmed and the PDA's hash/wallet match, then inserts the row. No fake record can be added |
+| `transcribe` | `audio_hash` + audio/video file | Accepts audio/video only (photo/doc → 415, `skipped`). Sends to ElevenLabs Scribe, writes `transcript`. API key lives only here (Supabase secret) |
+| `upload-url` | `audio_hash` | For a registered recording, returns a one‑time upload URL for the encrypted file |
 
-**Storage:** `recordings` bucket'ı, private. Yol `<audio_hash>.m4a.enc` (her dosya türü için aynı yol; dosya şifreli olduğu için uzantının anlamı yok, gerçek tür `mime_type`'ta). Okuma imzalı URL ile (1 saat), yazma sadece Edge Function üzerinden.
+**RLS:** anyone can read `recordings` (for the verification page), `anon` writes are off. All writes go through Edge Functions with the service role. No Sign‑In‑With‑Solana; `register`'s on‑chain check suffices for the hackathon.
 
-**Edge Function'lar:**
+Full API reference (request/response shapes, error codes): [`../supabase/README.md`](../supabase/README.md).
 
-| Fonksiyon | Girdi | Ne yapar |
-| --- | --- | --- |
-| `register` | `audio_hash`, `tx_signature`, `wallet`, `mime_type` (isteğe bağlı) | İşlemi devnet'ten okur, onaylı olduğunu ve PDA'daki hash/cüzdanın eşleştiğini kontrol eder, sonra satırı ekler. Sahte kayıt eklenemez |
-| `transcribe` | `audio_hash` + ses/video dosyası | Sadece ses ve video kabul eder (foto, belge → `415`, `skipped`). ElevenLabs Scribe'a gönderir, `transcript`'i yazar. API anahtarı sadece burada (Supabase secret) durur |
-| `upload-url` | `audio_hash` | Kayıt `register` edilmişse şifreli dosya için tek seferlik yükleme URL'si verir |
+## Web verification page
 
-**Güvenlik (RLS):** `recordings` tablosunda herkes okuyabilir (doğrulama sayfası için), `anon` rolüyle yazma kapalı. Tüm yazmalar service role ile Edge Function'lardan yapılır. Cüzdanla giriş (Sign-In With Solana) yok; hackathon için `register`'ın zincir kontrolü yeterli.
+Verification happens entirely in the browser. The file never goes to a server; the page reads directly from Solana RPC, so you don't have to trust us. Next.js + `@solana/web3.js`, deployed on Vercel.
 
-**Transkript akışı:** mühürleme bitince uygulama `transcribe`'ı arka planda çağırır, sonucu beklemez. Ses dosyası transkripsiyon için ElevenLabs'e gider; pitch'te bu açıkça söylenir ve transkript ayarı kapatılabilir olur.
+**Pages:** `/` (drag & drop) and `/v/<hash>` (share link; `#k=` auto‑downloads and decrypts, otherwise the user uploads the file).
 
-## Web doğrulama sayfası
+**Steps:**
 
-Doğrulama tamamen tarayıcıda olur. Dosya sunucuya gitmez, sayfa doğrudan Solana RPC'den okur, bu yüzden bize güvenmek gerekmez. Next.js + `@solana/web3.js`, Vercel'e deploy.
-
-**Sayfalar:**
-
-- `/` : dosya sürükle bırak alanı, "Dosya bilgisayarınızdan çıkmaz" notu
-- `/v/<hash>` : paylaşım linki. Hash üstte görünür, zincir kaydı hemen yüklenir. `#k=` varsa şifreli dosya indirilip otomatik doğrulanır; yoksa kullanıcı dosyayı kendisi yükler
-
-**Doğrulama adımları:**
-
-1. `file.arrayBuffer()` → `crypto.subtle.digest("SHA-256", buf)` → hex
-2. PDA = `findProgramAddressSync(["rec", hash], PROGRAM_ID)`
-3. `connection.getAccountInfo(pda)` → Anchor coder ile `Recording`'i çöz
-4. Hesap yok → ❌, hesap var → ✅ ve detaylar
-5. `/v/<hash>` sayfasında yüklenen dosyanın hash'i URL'deki hash'ten farklıysa → ❌ "Bu dosya o kayıt değil, kesilmiş ya da değiştirilmiş"
+1. `file.arrayBuffer()` → `crypto.subtle.digest("SHA-256", buf)` → hex (streaming for > 64 MB).
+2. PDA = `findProgramAddressSync(["rec", hash], PROGRAM_ID)`.
+3. `getAccountInfo(pda)` → decode `Recording` with the Anchor coder.
+4. No account → ❌; account present → ✅ with details.
+5. On `/v/<hash>`, if the uploaded file's hash ≠ the URL hash → ❌ "not that record, trimmed or modified".
 
 ```mermaid
 flowchart TD
-  F[Dosya seçildi] --> H[Tarayıcıda SHA-256]
-  H --> P[PDA adresini hesapla]
+  F[File selected] --> H[SHA-256 in browser]
+  H --> P[Derive PDA]
   P --> R{getAccountInfo}
-  R -- hesap yok --> X[❌ Mühürlenmemiş ya da değiştirilmiş]
-  R -- hesap var --> D[Recording'i çöz]
-  D --> L{/v/hash sayfası mı?}
-  L -- hayır --> OK[✅ Zaman, cüzdan, süre, rozet]
-  L -- evet --> C{URL hash'i = dosya hash'i?}
-  C -- evet --> OK
-  C -- hayır --> X2[❌ Bu dosya o kayıt değil]
+  R -- no account --> X[❌ Not sealed / modified]
+  R -- account --> D[Decode Recording]
+  D --> L{/v/hash page?}
+  L -- no --> OK[✅ Time, wallet, duration, badge]
+  L -- yes --> C{URL hash = file hash?}
+  C -- yes --> OK
+  C -- no --> X2[❌ Not that record]
 ```
 
-**Sonuç ekranında olması gerekenler:**
+**Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link + Seeker badge; duration, tx link, transcript. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
 
-| Alan | ✅ Eşleşti | ❌ Eşleşmedi |
-| --- | --- | --- |
-| Büyük durum | Yeşil "Bu dosya mühürlü kayıtla birebir aynı" | Kırmızı "Bu dosya hiç mühürlenmemiş ya da değiştirilmiş" |
-| Zaman | "En geç şu anda vardı": `anchored_at`, büyük; cihaz saati küçük | — |
-| Cüzdan | Kısaltılmış adres + Explorer linki, Seeker rozeti (varsa) | — |
-| Kayıt | Süre, işlem imzası linki, transkript (varsa) | Beklenen ve hesaplanan hash yan yana (paylaşım linkinde) |
-| Dipnot | "Bu sayfa içeriğin doğru olduğunu değil, sonradan değiştirilmediğini kanıtlar" | — |
+**Memo fallback:** `/v/<hash>?tx=<signature>` → the page reads the memo text via `getTransaction`, compares the hash, and uses `blockTime` for the timestamp.
 
-**Memo yedeğinde:** `/v/<hash>?tx=<imza>` ile gelinir; sayfa `getTransaction` ile memo metnini okuyup hash'i karşılaştırır, zaman için `blockTime`'ı kullanır.
+## Interface contracts
 
-## Roller: kim ne yapıyor
-
-Her parçanın tek bir sahibi var. Rust/Solana bilen 3'ü, en tecrübeli React Native'ci 2'yi, ikinci React Native'ci 1'i, web'ci 4'ü, en iyi anlatan 5'i alsın. Oturma düzeni: 1+2 yan yana, 3+4 yan yana, 5 ortada.
-
-| Rol | Teslim ettiği | Kimi bekler / kim onu bekler |
-| --- | --- | --- |
-| 1. Mobil UI | 5 ekran, ses formatı (m4a/AAC, 44.1 kHz, mono), son dosya yolu, demo ekran kaydı | 2'ye dosyayı verir |
-| 2. Mobil cüzdan + entegrasyon | MWA bağlantısı, hash, işlem oluşturma ve imzalatma, Genesis rozeti, APK, Seeker cihazı | 1'den dosyayı, 3'ten IDL'ı bekler |
-| 3. Solana programı | Anchor programı, testler, devnet deploy, program ID + IDL, Memo yedeği, README | 2 ve 4 onun IDL'ını bekler |
-| 4. Web doğrulama | Next.js sayfası, `/v/<hash>`, şifreli dosya çözme, Vercel deploy, slayt görselleri | 3'ten IDL'ı bekler (o zamana kadar sahte veri) |
-| 5. Backend + AI + kaptan | Supabase tablo/bucket/RLS, `register` / `transcribe` / `upload-url`, check-in'ler, mentor/jüri iletişimi, pitch, demo videosu, gönderim | Kimseyi bloklamaz; kritik yolda değil |
-
-**Ortak sorumluluklar:**
-
-- Hash çapraz testi: 1 + 4 (aynı dosya telefonda, tarayıcıda ve `shasum`'da aynı hash'i verecek)
-- `Recording` hesap yapısının donması: 3 yazar, 2 ve 4 onaylar
-- Demo provası: herkes, 29 Kasım öğleden sonra
-
-## Yol haritası
-
-Önceden kod yazmak serbest olduğu için bütün riskli işler hackathon öncesine çekildi.
-
-```mermaid
-gantt
-  title Witness yol haritası (25–29 Kasım 2026)
-  dateFormat YYYY-MM-DD
-  axisFormat %d %b
-  section Hackathon öncesi
-  Riskleri kapat (MWA+Memo, program, hash testi) :a1, 2026-11-25, 1d
-  MVP (deploy, app→program, gerçek PDA)          :crit, a2, 2026-11-26, 1d
-  section Hackathon
-  Ekstralar 1 (Genesis, transkript, liste)       :a3, 2026-11-27, 1d
-  Ekstralar 2 (paylaşım, şifreleme, cila)        :a4, 2026-11-28, 1d
-  Demo (fix, video, pitch, gönderim)             :a5, 2026-11-29, 1d
-  section Kapılar
-  Seeker'dan işlem gitti      :milestone, m1, 2026-11-25, 0d
-  MVP uçtan uca çalışıyor     :milestone, crit, m2, 2026-11-26, 0d
-  Ekstralar kapanır           :milestone, m3, 2026-11-28, 0d
-  Öğlen feature freeze        :milestone, m4, 2026-11-29, 0d
-```
-
-| Rol | 25 Kas | 26 Kas | 27 Kas | 28 Kas | 29 Kas |
-| --- | --- | --- | --- | --- | --- |
-| 1. Mobil UI | Kayıt ekranı, m4a çıktısı | Cüzdan bağla + Mühürleme durumu | Kayıt listesi, transkript görünümü | Kayıt detayı, UI cilası | Hata düzeltme, demo ekran kaydı |
-| 2. Cüzdan + entegrasyon | **İlk iş:** MWA ile Memo işlemi; SHA-256 | IDL'dan `register_recording`, PDA okuma | Genesis rozeti, `register` çağrısı | Şifreleme + yükleme | Son APK |
-| 3. Solana programı | `register_recording` + testler, devnet deploy | IDL'ı paylaş, destek, Memo yedeği | PDA / Memo okumada destek | README, repo | Program ID, gönderim |
-| 4. Web doğrulama | Next.js iskeleti, tarayıcıda hash, sahte veri | Gerçek PDA ile ✅ / ❌, Vercel | `/v/<hash>` | Şifreli dosya çözme, transkript | Slayt görselleri |
-| 5. Backend + kaptan | Repo + kurallar, Supabase, ElevenLabs denemesi | `register` + `transcribe` | Transkripti bağla, check-in'ler | `upload-url`, pitch taslağı | Pitch + video, sunum, gönderim |
-
-**Karar noktaları:**
-
-- 25 Kasım akşamı Seeker'dan devnet'e işlem gitmediyse → 26 Kasım sabahı herkes 2'ye destek, emülatör yedeği devreye girer
-- 26 Kasım öğlen program deploy edilmediyse → Memo ile devam, program 27 Kasım'a kalır
-- 26 Kasım akşamı MVP uçtan uca çalışmıyorsa → 27 Kasım'da ekstra yok, sadece MVP
-- 29 Kasım öğlen → feature freeze
-
-## Ortak kurallar ve arayüz sözleşmeleri
-
-| Konu | Kural |
+| Topic | Rule |
 | --- | --- |
-| Hash | Dosyanın son halinin ham baytlarının SHA-256'sı. Metinde küçük harf hex, zincirde 32 bayt. Dosya sonradan yeniden kodlanmaz |
-| Ses formatı | m4a (AAC), mono, 44.1 kHz |
-| Program | Devnet, `PROGRAM_ID` + `program/target/idl/witness.json`. PDA seed'leri `["rec", hash32]` |
-| Paket sürümleri | `@coral-xyz/anchor` **0.31.x** (app + web, programın ürettiği IDL'ı okuyabilmek için aynı major/minor; Anchor 0.30+ IDL formatı eskisiyle uyumsuz). `@solana/web3.js` **1.x** (v2 kullanılmaz, API farklı). Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, Expo Go değil |
-| Zaman | Zincirde Unix saniye (`i64`), UI'da İstanbul saati |
-| Supabase tablosu | `recordings` (yukarıdaki kolonlar) |
-| Paylaşım linki | `/v/<hash>` + isteğe bağlı `#k=<anahtar>`, Memo yedeğinde `?tx=<imza>` |
-| Memo formatı | `witness:v1:<hash hex>` |
-| Repo | Tek repo, public: `/app`, `/program`, `/web`, `/supabase`, `/docs` |
-| Branch | Herkes kendi klasöründe, `main`'e küçük ve sık PR. Ortak dosyalar (IDL, `.env.example`) sadece sahibi tarafından değiştirilir |
-| Gizli anahtarlar | ElevenLabs ve Supabase service key sadece Supabase secrets'ta. Repo'da sadece `.env.example` |
-| Check-in | Günde 3 kez 10 dk (sabah, öğle, akşam): ne bitti, ne takıldı, kim kimi bekliyor |
+| Hash | SHA‑256 of the file's final raw bytes, lowercase hex, 32 bytes on chain. Never re‑encoded after sealing |
+| Audio format | m4a (AAC), mono, 44.1 kHz |
+| Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` |
+| Package versions | `@coral-xyz/anchor` **0.31.x** (app + web, to read the program's IDL), `@solana/web3.js` **1.x**, Anchor CLI **0.31.x**, Node **20 LTS**. App: Expo **dev build**, not Expo Go |
+| Time | Unix seconds (`i64`) on chain, local time in UI |
+| Share link | `/v/<hash>` + optional `#k=<key>`, Memo fallback `?tx=<signature>` |
+| Memo format | `witness:v1:<hash hex>` |
+| Secrets | ElevenLabs and Supabase service keys only in Supabase secrets; repo ships only `.env.example` |
 
-## Riskler, açık kararlar ve demo
+## Threats & design decisions
 
-| Risk | Etki | Önlem |
-| --- | --- | --- |
-| MWA / Seed Vault ile işlem gönderilemiyor | Her şey | 25 Kasım ilk iş Memo testi; olmazsa emülatör + mock wallet |
-| Telefondaki hash ile tarayıcıdaki hash farklı | Demo ❌ verir | Hash çapraz testi; dosya mühürden sonra hiç değişmez |
-| Anchor deploy gecikir | Program yok | Memo yedeği |
-| Expo + MWA kurulumu zaman yer | Gecikme | Solana Mobile Expo şablonundan başla |
-| Devnet yavaş / faucet limiti | İşlem düşer | Her cüzdana yeterli devnet SOL; yedek RPC |
-| ElevenLabs gecikmesi | Transkript geç gelir | Asenkron; demo kaydı önceden test edilir |
-| Konumun zincirde açık kalması | Mağdurlar için tehlike | Varsayılan kapalı, sadece commitment |
+| Risk | Mitigation |
+| --- | --- |
+| Phone hash ≠ browser hash | Cross‑check (phone / browser / `shasum`); the file never changes after sealing |
+| Program not deployed / unavailable | Memo fallback (`?tx=`) |
+| Location left in the clear on chain | Off by default; only a commitment is ever written |
+| Transcription exposes audio | Audio goes to ElevenLabs only for opt‑in transcription; stated in the pitch, toggleable |
 
-**Kapanan kararlar:**
+**Closed decisions:** transcript hash is not written on chain (`attach_transcript` removed); location is never written in the clear; audio stays on the phone by default, encrypted if shared; separate wallet approval per seal.
 
-- Transkript hash'i zincire yazılmıyor, `attach_transcript` yok
-- Konum zincire açık yazılmıyor
-- Ses varsayılan olarak telefonda kalıyor, paylaşılırsa şifreli yükleniyor
-- Her kayıt için ayrı cüzdan onayı
+## Demo (~90 s)
 
-**Hâlâ açık:**
-
-- [ ] Rollere isim atanması
-- [ ] Türkiye local track var mı (Telegram)
-- [ ] Seeker Genesis Token mint adresi
-- [ ] Önceden yazılan kodun jüriye beyan edilmesi gerekiyor mu
-
-**Demo senaryosu (~90 sn):**
-
-1. Problem: "Bir ses kaydının sonradan kesilip kesilmediğini bugün kanıtlayamazsınız."
-2. Seeker'da 10 sn kayıt → parmak iziyle onay → Mühürlendi, Explorer linki
-3. Transkript ekranda belirir
-4. Doğrulama sayfası: orijinal dosya → ✅ Eşleşti, zaman, cüzdan, Seeker rozeti
-5. Audacity'de bir saniye kes, tekrar yükle → ❌ Eşleşmedi
-6. Kapanış: kimler için (gazeteciler, kiracılar, taciz mağdurları), neden Seeker, neyi kanıtlamıyoruz
+1. Problem: "Today you can't prove whether a recording was trimmed after the fact."
+2. Record 10 s (or pick a photo) → biometric approval → Sealed, Explorer link.
+3. Transcript appears on screen.
+4. Verification page: original file → ✅ match, time, wallet, Seeker badge.
+5. Trim one second / change one byte, re‑upload → ❌ no match.
+6. Close: who it's for (journalists, tenants, harassment victims), why Seeker, what we don't claim.

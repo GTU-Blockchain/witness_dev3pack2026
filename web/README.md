@@ -1,73 +1,50 @@
-# /web: doğrulama sayfası
+# /web — verification page
 
-**Sahibi:** 4 Web doğrulama · Next.js + `@solana/web3.js` + `@coral-xyz/anchor`, Vercel'e deploy.
+Next.js + `@solana/web3.js` + `@coral-xyz/anchor`, deployed on Vercel. Verification happens **entirely in the browser**: the file never leaves the device, and the page reads directly from Solana RPC — so you don't have to trust us.
 
-Doğrulama tamamen tarayıcıda: dosya sunucuya gitmez, sayfa doğrudan Solana RPC'den okur.
+**Live:** https://web-pi-cyan-30.vercel.app
 
-## Kurulum
+## Setup
 
-> **Not (2026-11-25):** `/web` iskeleti **zaten kuruldu** ve Vercel'de canlı: `https://web-pi-cyan-30.vercel.app`. Üzerine tekrar `create-next-app` **çalıştırma** — mevcut dosyaları ve `public/.well-known/assetlinks.json`'ı siler. Mevcut Next.js app router scaffold'unun üstüne doğrulama sayfasını ekle.
+> The `/web` scaffold is **already set up** and live on Vercel. **Do not** run `create-next-app` on top of it — it would delete existing files and `public/.well-known/assetlinks.json`.
 
 ```bash
 cd web
-npm i                       # bağımlılıklar package.json'da (anchor 0.31.1, web3.js 1.x, @noble/hashes 1.8.0)
+npm i                       # anchor 0.31.1, web3.js 1.x, @noble/hashes 1.8.0
 npm run dev
 ```
 
-IDL gelene kadar sahte veriyle çalış; sonra `../program/target/idl/witness.json` kullan.
+### ⚠️ Do not touch assetlinks.json
 
-### ⚠️ assetlinks.json'a dokunma
+`public/.well-known/assetlinks.json` is required for the mobile app's MWA dApp‑identity verification (Android App Links). This domain (`web-pi-cyan-30.vercel.app`) must match the `uri` in `app/constants/app-config.ts` exactly; deleting/moving it makes Phantom reject signing. If you change the domain, update both `app-config.ts` and the package/fingerprint in assetlinks together.
 
-`public/.well-known/assetlinks.json` mobil uygulamanın MWA dApp identity doğrulaması için gerekli (Android App Links). Bu domain (`web-pi-cyan-30.vercel.app`) `app/constants/app-config.ts`'teki `uri` ile birebir aynı olmalı; silme/taşıma, sonra Phantom imzayı reddeder. Domaini değiştireceksen hem `app-config.ts`'i hem assetlinks'teki paket/parmak izini birlikte güncelle.
+## Pages
 
-## Sayfalar
+- `/` — drag & drop; "your file never leaves your computer".
+- `/v/<hash>` — share link. With `#k=` it downloads the encrypted file, decrypts, and verifies; otherwise the user uploads the file themselves. Memo fallback via `?tx=<signature>` → full spec in [`docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md).
 
-- `/` : sürükle bırak, "Dosya bilgisayarınızdan çıkmaz"
-- `/v/<hash>` : paylaşım linki; `#k=` varsa şifreli dosyayı indir, çöz, doğrula. Memo yedeğinde `?tx=<imza>` → tam sözleşme: [`docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md)
+## Verification steps
 
-## Doğrulama
+1. SHA‑256 of the file's raw bytes → lowercase hex (`lib/hash.ts` → `sha256HexOfFile`; see large files below).
+2. `PublicKey.findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`.
+3. `getAccountInfo(pda)` → missing ❌ / present → decode `Recording` with the Anchor coder ✅.
+4. On `/v/<hash>`, if the uploaded file's hash differs from the URL hash → ❌ "this is not that record".
 
-1. Dosyanın ham baytlarının SHA-256'sı → küçük harf hex (`lib/hash.ts` → `sha256HexOfFile`; büyük dosyalar için aşağıya bak)
-2. `PublicKey.findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`
-3. `getAccountInfo(pda)` → yok ❌ / var → Anchor coder ile `Recording` çöz ✅
-4. `/v/<hash>`'te dosya hash'i URL hash'inden farklıysa ❌ "Bu dosya o kayıt değil"
+Footer, always: *"This page proves the content was not altered after sealing — not that it is true."*
 
-Dipnot her zaman: "Bu sayfa içeriğin doğru olduğunu değil, sonradan değiştirilmediğini kanıtlar."
+Duration: Witness can seal any file type, so files without a duration (e.g. photos) are written on chain with `duration_ms = 1`. The "Duration" row is shown only for audio/video (`lib/format.ts` → `shouldShowDuration`).
 
-Süre: Witness her dosya türünü mühürleyebildiği için fotoğraf gibi süresiz dosyalar zincire `duration_ms = 1` ile yazılır (program `> 0` istiyor). "Süre" satırı sadece ses/video dosyalarında gösterilir; tarayıcı türü bilmiyorsa 1 ms süresiz sayılır (`lib/format.ts` → `shouldShowDuration`).
+## Large files
 
-## Tema
+The first version used `file.arrayBuffer()` (whole file into memory at once). Since video can now be sealed, a several‑hundred‑MB file could crash the tab — and WebCrypto has no streaming digest. So `lib/hash.ts`:
 
-Renkler Witness ortak temasıyla birebir aynı: `app/constants/theme.ts` (`C`). Doğrulama sayfası, uygulamadan geçildiğinde aynı görünsün diye kendi paletini tanımlamaz. Ortak tema sadece koyu olduğu için web de sadece koyu temadadır.
-
-- Eşleme `app/globals.css` başındaki `:root` bloğunda, her satırda karşılığıyla birlikte: `--ground` = `C.bg`, `--surface` = `C.surface`, `--ink` = `C.text`, `--muted` = `C.textSoft`, `--faint` = `C.muted`, `--border` = `C.border`, ✅ = `C.emerald` / `C.emeraldSoft`, ❌ = `C.red` / `C.redSoft`, birincil buton = `C.emerald` + `C.onEmerald`.
-- `theme.ts` değişirse bu blok da güncellenmeli. Bileşenlerde elle renk yazılmaz, sadece token kullanılır.
-- Köşe yarıçapları ve yazı tipleri (Google Sans Flex / Code, `public/fonts`) ortak temada tanımlı olmadığı için Gemini tasarım maketinden alındı.
-
-## Büyük dosyalar
-
-**Sorun:** İlk sürüm hash için `file.arrayBuffer()` kullanıyordu; bu, dosyanın tamamını tek seferde belleğe alır. Artık video da mühürlenebildiği için yüzlerce MB'lık bir dosyada (özellikle telefonda) tarayıcı sekmesi çökebilir. WebCrypto'nun (`crypto.subtle.digest`) parça parça hash'leme desteği yok.
-
-**Çözüm** (`lib/hash.ts`):
-
-| Dosya boyutu | Yöntem |
+| File size | Method |
 | --- | --- |
-| ≤ 64 MB (`STREAM_THRESHOLD_BYTES`) | Eskisi gibi: tek seferde `crypto.subtle.digest` (tarayıcının yerel, en hızlı yolu) |
-| > 64 MB | Dosya `file.slice()` ile 8 MB'lık parçalar (`CHUNK_BYTES`) halinde okunur, her parça artımlı SHA-256'ya (`@noble/hashes` → `sha256.create().update()`) verilir. Bellekte aynı anda sadece bir parça durur |
+| ≤ 64 MB (`STREAM_THRESHOLD_BYTES`) | `crypto.subtle.digest` in one shot (native, fastest) |
+| > 64 MB | `file.slice()` into 8 MB chunks (`CHUNK_BYTES`), each fed into an incremental SHA‑256 (`@noble/hashes` → `sha256.create().update()`). Only one chunk in memory at a time |
 
-- **Sonuç birebir aynı SHA-256'dır.** Hash kuralı değişmez: dosyanın ham baytları, sırayla, hiç dönüştürülmeden hash'lenir. Telefonda ve `shasum -a 256` ile aynı hex çıkar.
-- Büyük dosyada ekranda ilerleme yüzdesi görünür ("Parmak izi hesaplanıyor… %42").
-- `@noble/hashes` **1.8.0**'a sabit: `@solana/web3.js` ve Anchor'un zaten kullandığı sürüm, ek paket indirilmez. Saf JS olduğu için WebCrypto'dan yavaştır; bu yüzden sadece eşiğin üstünde kullanılır.
-- Dalga formu (`components/WaveForm.tsx`) ses çözmek için dosyanın tamamını okur; bu yüzden 64 MB'ın üstündeki dosyalarda çizilmez. Doğrulama sonucunu etkilemez, ✅/❌ hash'ten gelir.
-- Dosya yine hiçbir yere gönderilmez; parçalar sadece tarayıcı belleğinde okunur.
+The result is the **exact same** SHA‑256 — the hash rule never changes (raw bytes, in order, untransformed; identical to the phone and `shasum -a 256`). A progress percentage is shown for large files. `@noble/hashes` is pinned to **1.8.0** (already used by web3.js/Anchor, no extra download); it's pure JS so it's used only above the threshold. The file is still never uploaded — chunks are read only in browser memory.
 
-## Görevler
+## Theme
 
-| Tarih | Görev |
-| --- | --- |
-| 25 Kas 22:00 | İskelet, tarayıcıda hash, sahte veriyle sonuç ekranı |
-| 25 Kas 23:00 | Hash çapraz testi (1 ile) |
-| 26 Kas | Gerçek PDA ile ✅/❌ (18:00), Vercel deploy (20:00) |
-| 27 Kas | `/v/<hash>` |
-| 28 Kas | Şifreli dosya çözme (`#k=`) + transkript |
-| 29 Kas | Pitch slayt görselleri |
+Colors mirror the shared Witness theme in `app/constants/theme.ts` (`C`) so the page looks identical when reached from the app. Mapping lives at the top of `app/globals.css`; components use tokens only, never hard‑coded colors. The shared theme is dark‑only, so the page is dark‑only too.

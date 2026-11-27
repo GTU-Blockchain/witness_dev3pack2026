@@ -1,39 +1,50 @@
-# /program: Witness Anchor programı
+# /program — Witness Anchor program
 
-**Sahibi:** 3 Solana programı · **Bekleyenler:** 2 (uygulama) ve 4 (web) IDL'ı bekler.
+The program's only job: open a typed, write‑once record account for each file hash that is discoverable *from the hash alone*. Written in Anchor, running on devnet. Proof is possible without the program (the Memo fallback); the program adds three things on top: verification **from the file alone**, protection against sealing the same hash twice, and typed on‑chain data.
 
-## Kurulum
+**Program ID (devnet):** `2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`
+
+## Setup
 
 ```bash
 cd program
 yarn install
 anchor build
-anchor keys sync          # declare_id! ve Anchor.toml'u gerçek ID ile günceller
-anchor test               # localnet
+anchor keys sync          # updates declare_id! and Anchor.toml with the real ID
+anchor test               # localnet (4 scenarios)
 anchor deploy --provider.cluster devnet
 ```
 
-Deploy sonrası paylaşılacaklar: `PROGRAM_ID` (kök `.env.example`'a) ve `target/idl/witness.json` (commit'lenir).
+After deploy, share: `WITNESS_PROGRAM_ID` (into the root `.env.example`) and `target/idl/witness.json` (committed).
 
-## Sözleşme
+## Account: `Recording` — seeds `["rec", audio_hash]`, 126 bytes
 
-- Hesap `Recording`, seed'ler `["rec", audio_hash]`, 126 bayt
-- `register_recording(audio_hash, recorded_at, duration_ms, location_commitment)`
-- Aynı hash ikinci kez yazılamaz (`init`), `duration_ms == 0` → `InvalidDuration`
-- `anchored_at` = `Clock::get()?.unix_timestamp`
-- Yok: hesap kapatma, güncelleme, admin, `attach_transcript`
+```rust
+#[account]
+pub struct Recording {
+    pub authority: Pubkey,                     // sealing wallet
+    pub audio_hash: [u8; 32],                  // SHA-256 of the file
+    pub recorded_at: i64,                       // phone time (claimed)
+    pub anchored_at: i64,                        // Clock::get()?.unix_timestamp (the real proof)
+    pub duration_ms: u32,
+    pub location_commitment: Option<[u8; 32]>,  // sha256(lat|lon|salt), not raw coordinates
+    pub bump: u8,
+}
+```
 
-## Memo yedeği
+## Instruction
 
-Program 26 Kas öğlene kadar deploy edilemezse: Memo programına `witness:v1:<hash hex>` metni gönderilir, web `?tx=<imza>` ile doğrular.
+`register_recording(audio_hash, recorded_at, duration_ms, location_commitment)` — the sealing wallet (signer + payer) opens the PDA via `init`, writes the fields, takes `anchored_at` from the on‑chain clock, and emits a `RecordingRegistered` event.
 
-## Görevler
+- Same hash a second time → fails (`init` on an existing PDA). One record per file, ever.
+- `duration_ms == 0` → `InvalidDuration`. Files with no duration (e.g. photos) are sealed with `duration_ms = 1`.
 
-| Tarih | Görev |
-| --- | --- |
-| 25 Kas 20:00 | `Recording` + `register_recording` + testler (yapıyı 2 ve 4 onaylasın) |
-| 25 Kas 23:00 | Devnet deploy, program ID + IDL paylaş |
-| 26 Kas 13:00 | SPL Memo yedek yolu (uygulama + web `?tx=`) |
-| 27 Kas | Web'e PDA / Memo okumada destek |
-| 28 Kas | README, repo düzeni |
-| 29 Kas 19:00 | Program ID + README son hali + gönderim |
+**Read side (web & app):** derive the PDA with `findProgramAddressSync([Buffer.from("rec"), hashBytes], PROGRAM_ID)`. No account → "this file was never sealed"; account present → decode with the Anchor coder.
+
+## Deliberately omitted
+
+No account close (proof can't be deleted), no update instruction (immutability), no admin key, no `attach_transcript`. Upgrade authority stays with the team on devnet; on mainnet the program would be made immutable.
+
+## Memo fallback
+
+If the program is ever unavailable, the app sends an SPL Memo with text `witness:v1:<hash hex>` and the web page verifies via `?tx=<signature>`. Spec: [`../docs/MEMO_YEDEGI_SOZLESMESI.md`](../docs/MEMO_YEDEGI_SOZLESMESI.md).

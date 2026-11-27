@@ -1,29 +1,27 @@
-# Memo yedeği `?tx=` sözleşmesi
+# Memo fallback `?tx=` contract
 
-_Rol 2+3 (Cüzdan + program) belirler, Rol 4 (web) uygular. Program devnet'e deploy edilemezse MVP bu yolla ayakta kalır. Ortak kurallar: `docs/TEKNIK_DOKUMAN.md`. Memo formatı: `witness:v1:<hash hex>`._
+If the Anchor program is ever unavailable, the MVP survives through this path. It's a **fallback** — if the program (PDA) path works, this isn't used. Both give the same promise: "this file hasn't changed since the moment it was signed." Shared rules: [`TEKNIK_DOKUMAN.md`](TEKNIK_DOKUMAN.md).
 
-Program (PDA) yolu çalışıyorsa buna gerek yok; bu yol **yedek**. İkisi de aynı doğrulama vaadini verir: "bu dosya, imza anından sonra değişmedi."
+## Definitions
 
-## Tanımlar
+- **Memo program:** `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` (SPL Memo)
+- **Memo text:** exactly `witness:v1:<hash hex>` — `<hash hex>` is the SHA‑256 of the file's raw bytes, 64‑char lowercase hex
+- **`<hash>` (in the URL path):** the same hash; `/v/<hash>` already carries it
 
-- **Memo programı:** `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` (SPL Memo)
-- **Memo metni:** tam olarak `witness:v1:<hash hex>` — `<hash hex>` dosyanın ham baytlarının SHA-256'sı, 64 karakter küçük harf hex
-- **`<hash>` (URL yolundaki):** aynı hash; `/v/<hash>` sayfası zaten bununla gelir
+## App side
 
-## Uygulama tarafı (Rol 2)
+If the program isn't deployed, an SPL Memo tx is sent instead of `register_recording`:
 
-Program deploy değilse, `register_recording` yerine SPL Memo işlemi gönderilir:
+- One instruction: `createMemoInstruction("witness:v1:" + hashHex)` (signer = user wallet)
+- Sign + send (MWA `signAndSendTransactions`), await confirmation
+- The returned **signature** is added to the share link: `/<verify-base>/v/<hashHex>?tx=<signature>`
+- (optional) `(hash, tx signature, wallet)` can be stored in Supabase; the web path reads from the signature even without it
 
-- Tek instruction: `createMemoInstruction("witness:v1:" + hashHex)` (imzalayan = kullanıcı cüzdanı)
-- İmzala + gönder (MWA `signAndSendTransactions`), onay bekle
-- Dönen **imza** paylaşım linkine eklenir: `/<verify-base>/v/<hashHex>?tx=<imza>`
-- (ekstra) Supabase'e `(hash, tx imza, cüzdan)` yazılabilir; web yoksa da imzadan okur
+Helpers: `app/utils/witness-hash.ts` → `sha256HexOfFile(uri)` and `witnessMemo(hashHex)`.
 
-`hashHex` için: `app/utils/witness-hash.ts` → `sha256HexOfFile(uri)` ve memo metni için `witnessMemo(hashHex)`.
+## Web side — verification steps
 
-## Web tarafı (Rol 4) — doğrulama adımları
-
-URL: `/v/<hash>?tx=<imza>`. Sayfa tamamen tarayıcıda çalışır; dosya sunucuya gitmez.
+URL: `/v/<hash>?tx=<signature>`. Entirely in the browser; the file never goes to a server.
 
 ```ts
 import { Connection, PublicKey } from "@solana/web3.js"
@@ -37,27 +35,26 @@ const tx = await connection.getTransaction(signature, {
 })
 ```
 
-1. **İşlem var mı / başarılı mı:** `tx == null` → ❌ "İşlem bulunamadı". `tx.meta?.err != null` → ❌ "İşlem başarısız".
-2. **Memo metnini oku:** en kolay yol log'lardan —
+1. **Exists / succeeded:** `tx == null` → ❌ "transaction not found". `tx.meta?.err != null` → ❌ "transaction failed".
+2. **Read the memo text** (easiest from the logs):
    ```ts
    const memoLine = tx.meta?.logMessages?.find(l => l.includes("witness:v1:"))
-   // örn: "Program log: witness:v1:adc2ea..."
    const memoText = memoLine?.split("Program log: ")[1]?.trim()
    ```
-   (Alternatif: Memo instruction'ının `data` baytlarını UTF-8 decode et. İşlemde Memo programının çağrıldığını `accountKeys` içinde `MEMO_PROGRAM_ID` var mı diye de teyit et.)
-3. **Formatı doğrula:** `memoText` `^witness:v1:[0-9a-f]{64}$` kalıbına uymuyorsa → ❌ "Geçersiz mühür". `hashFromMemo = memoText.slice("witness:v1:".length)`.
-4. **URL yolu ile tutarlılık:** `hashFromMemo !== <hash>` (yoldaki) → ❌ "Bağlantı tutarsız".
-5. **Dosya ile karşılaştır (asıl kanıt):** kullanıcı dosya yükleyince `crypto.subtle.digest("SHA-256", bytes)` → küçük harf hex. Bu hex `hashFromMemo`'ya **eşitse ✅**, değilse **❌ "Bu dosya o kayıt değil"**.
-6. **Zaman:** `tx.blockTime` (unix saniye) = zincire mühürlenme anı. Ekranda göster (asıl kanıt budur; telefon saati değil).
-7. **Kim mühürledi:** fee payer = `tx.transaction.message.getAccountKeys().get(0)` (versioned) ya da `staticAccountKeys[0]` — mühürleyen cüzdan adresi.
+   (Alternative: UTF‑8‑decode the Memo instruction's `data` bytes. Also confirm `MEMO_PROGRAM_ID` is in `accountKeys`.)
+3. **Validate format:** if `memoText` doesn't match `^witness:v1:[0-9a-f]{64}$` → ❌ "invalid seal". `hashFromMemo = memoText.slice("witness:v1:".length)`.
+4. **Consistency with the URL path:** `hashFromMemo !== <hash>` → ❌ "link is inconsistent".
+5. **Compare with the file (the real proof):** when the user uploads the file, `crypto.subtle.digest("SHA-256", bytes)` → lowercase hex. Equal to `hashFromMemo` → **✅**, else **❌ "not that record"**.
+6. **Time:** `tx.blockTime` (unix seconds) = the moment it was sealed. Show this (not the phone's clock).
+7. **Who sealed it:** fee payer = `tx.transaction.message.getAccountKeys().get(0)` (versioned) or `staticAccountKeys[0]`.
 
-## Program yolu ile tek fark
+## The only difference from the program path
 
-| | Program (PDA) | Memo yedeği |
+| | Program (PDA) | Memo fallback |
 | --- | --- | --- |
-| Girdi | sadece dosya → hash → PDA | dosya + `?tx=<imza>` |
-| Zaman kaynağı | `anchored_at` (PDA alanı) | `blockTime` |
-| Aynı hash 2. kez | zincirde engellenir | engellenmez (sadece kayıt) |
-| Dipnot | her ekranda: "Bu sayfa içeriğin doğru olduğunu değil, sonradan değiştirilmediğini kanıtlar." | aynı |
+| Input | file only → hash → PDA | file + `?tx=<signature>` |
+| Time source | `anchored_at` (PDA field) | `blockTime` |
+| Same hash twice | blocked on chain | not blocked (just a log) |
+| Footer | "proves unaltered, not true" | same |
 
-PDA yolu önceliklidir; `?tx=` yoksa sayfa normal `/v/<hash>` PDA akışını kullanır.
+The PDA path takes priority; with no `?tx=`, the page uses the normal `/v/<hash>` PDA flow.
