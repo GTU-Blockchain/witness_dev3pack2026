@@ -1,5 +1,7 @@
 # Witness
 
+[![CI](https://github.com/GTU-Blockchain/witness_dev3pack2026/actions/workflows/ci.yml/badge.svg)](https://github.com/GTU-Blockchain/witness_dev3pack2026/actions/workflows/ci.yml)
+
 **A mobile notary for media. Seal any photo, audio, video or document on Solana and let anyone prove it hasn't changed since.**
 
 Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and has the user sign an on‑chain record through Mobile Wallet Adapter (Seed Vault on a Seeker, Phantom elsewhere; the app never holds a key). The file itself never leaves the phone. Later, anyone can drop the same file into a public web page that re‑hashes it in the browser and checks the chain:
