@@ -2,7 +2,7 @@
 
 **A mobile notary for media. Seal any photo, audio, video or document on Solana and let anyone prove it hasn't changed since.**
 
-Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and has the user sign an on‑chain record with their hardware wallet (Seed Vault / Phantom via Mobile Wallet Adapter). The file itself never leaves the phone. Later, anyone can drop the same file into a public web page that re‑hashes it in the browser and checks the chain:
+Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and has the user sign an on‑chain record through Mobile Wallet Adapter (Seed Vault on a Seeker, Phantom elsewhere; the app never holds a key). The file itself never leaves the phone. Later, anyone can drop the same file into a public web page that re‑hashes it in the browser and checks the chain:
 
 > **✅ identical to the sealed record** — or — **❌ never sealed / modified since.**
 
@@ -18,7 +18,7 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 | Not a single byte has changed since *T* | ✅ Yes | SHA‑256 match |
 | This wallet sealed it | ✅ Yes | Ed25519 transaction signature |
 | It came from a genuine Seeker device | 🔜 Planned | Seeker Genesis Token (SGT) check — not yet implemented |
-| It was captured at location *L* | 🟡 Claim only | Phone GPS, not cryptographic |
+| It was captured at location *L* | 🔜 Planned, then claim only | The program has an optional `location_commitment` field; the app does not fill it yet. Even then it is phone GPS, not cryptographic |
 | The *content* is real / unstaged | ❌ No | You can hold a speaker to a mic. We say "unaltered", never "true" |
 
 ## Live & on‑chain
@@ -42,13 +42,13 @@ Everything in this list is in the code and runs on devnet now. Anything not list
 
 ## How it works
 
-Critical path: **app → hardware wallet → program → PDA ← verification page.** Supabase and ElevenLabs (dashed) are additive — if they go down, sealing and verification still work, because the proof lives entirely on‑chain.
+Critical path: **app → MWA wallet → program → PDA ← verification page.** Supabase and ElevenLabs (dashed) are additive — if they go down, sealing and verification still work, because the proof lives entirely on‑chain.
 
 ```mermaid
 flowchart LR
   subgraph Phone["Seeker / Android"]
     APP["Witness app<br/>record · share · pick file<br/>SHA-256 + build tx"]
-    SV["Hardware wallet<br/>(Seed Vault / Phantom)<br/>key never leaves device"]
+    SV["MWA wallet<br/>(Seed Vault on Seeker, Phantom elsewhere)<br/>app never holds the key"]
   end
   subgraph Chain["Solana devnet"]
     PROG["Witness program<br/>register_recording<br/>one PDA per hash"]
@@ -57,7 +57,7 @@ flowchart LR
   WEB["Verification page<br/>Next.js on Vercel<br/>hashes file in-browser"]
   subgraph Backend["Supabase (additive)"]
     EF["Edge Functions<br/>register · transcribe · upload-url"]
-    DB["recordings + Storage<br/>transcript · encrypted file"]
+    DB["recordings table<br/>tx · wallet · transcript"]
   end
   EL["ElevenLabs Scribe<br/>speech-to-text"]
 
@@ -144,7 +144,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | Hash | SHA‑256 of the file's final raw bytes. Lowercase hex (64 chars) in text, 32 bytes on chain. After sealing the file is **never** re‑encoded, trimmed, or re‑tagged |
 | Program | Devnet, `WITNESS_PROGRAM_ID` + `program/target/idl/witness.json`. PDA seeds `["rec", hash32]` — content‑addressed, one record per hash |
 | Time | Unix seconds (`i64`) on chain; UI shows local time |
-| Share link | `/v/<hash>` + optional `#k=<key>` |
+| Share link | `/v/<hash>` + optional `#k=<key>` (roadmap) |
 | Privacy | Only the hash, timestamp, duration, and an optional location **commitment** go on chain. Audio, transcript, and raw coordinates **never** touch the chain |
 | Secrets | ElevenLabs and Supabase service keys live only in Supabase secrets; the repo ships only `.env.example` |
 
@@ -152,9 +152,9 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 
 | Folder | Contents |
 | --- | --- |
-| [`/app`](app) | React Native + Expo **dev build** (Solana Mobile template): UI, recording, MWA + hardware‑wallet signing, hash |
+| [`/app`](app) | React Native + Expo **dev build** (Solana Mobile template): UI, recording, MWA signing, hash |
 | [`/program`](program) | Anchor program (`register_recording`), tests, IDL |
-| [`/web`](web) | Next.js verification page (`/`, `/v/<hash>`), deployed on Vercel |
+| [`/web`](web) | Next.js verification page (`/`; `/v/<hash>` on the roadmap), deployed on Vercel |
 | [`/supabase`](supabase) | SQL migrations + Edge Functions (`register`, `transcribe`, `upload-url`) |
 | [`/docs`](docs) | Technical deep‑dive + fallback spec (and internal team‑planning docs, in Turkish) |
 
@@ -172,4 +172,4 @@ Each folder's own README has setup steps. Deep dive: [`docs/TECHNICAL.md`](docs/
 
 ## Why Solana Mobile
 
-The private key lives in Seed Vault / the hardware wallet and never leaves the device; every seal is an explicit, biometric‑gated approval. Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
+Signing goes through Mobile Wallet Adapter, so on a Seeker the key stays in Seed Vault; the app never holds a key. Every seal is an explicit approval in the wallet (biometric on Seed Vault). Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
