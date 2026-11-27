@@ -9,11 +9,11 @@ Witness takes the SHA‑256 fingerprint of a file captured on a phone, has the u
 | The file existed no later than now | Provable | Solana block time (`anchored_at`) |
 | Not one byte has changed since | Provable | SHA‑256 match |
 | This wallet sealed it | Provable | Ed25519 transaction signature |
-| From a genuine Seeker device | Strong hint | Seeker Genesis Token in the wallet |
+| From a genuine Seeker device | 🔜 Planned | Seeker Genesis Token (SGT) check — not yet implemented |
 | Captured at this location | Claim only | Phone GPS, not cryptographic |
 | The content is real | Not provable | A speaker can play fake audio into a mic. We claim "unaltered", not "true" |
 
-**Core loop:** record/share/pick → hash → hardware‑wallet approval → write to chain → verification page ✅ / ❌. Everything else (transcript, share link, Genesis badge, location, encrypted sharing) is additive.
+**Core loop:** record/share/pick → hash → hardware‑wallet approval → write to chain → verification page ✅ / ❌. Everything else (transcript, share link, location, encrypted sharing) is additive.
 
 ## Architecture
 
@@ -57,7 +57,7 @@ Stack: React Native + Expo **dev build** (MWA does not work in Expo Go), Solana 
 | Record | Big record/stop button, timer, level meter, playback after stop, "Seal"/"Delete", location toggle (off by default) | Yes |
 | Seal status | Step‑by‑step: Hash → Waiting for wallet approval → Writing to chain → ✅ Sealed. First 8 hex chars, Explorer link, Share. Error + Retry | Yes |
 | My Recordings | Date, duration, status badge (Sealed / Pending / Error), first transcript line | Extra |
-| Recording detail | Player, full hash (copy), tx signature, chain time, transcript, share link, Seeker badge | Extra |
+| Recording detail | Player, full hash (copy), tx signature, chain time, transcript, share link | Extra |
 
 **User flow:** open → connect wallet once (MWA `authorize`, token cached) → record/stop/playback → Seal (app computes hash) → hardware approval (biometric) → tx goes to devnet → Sealed screen with Explorer + share link.
 
@@ -202,7 +202,7 @@ flowchart TD
   C -- no --> X2[❌ Not that record]
 ```
 
-**Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link + Seeker badge; duration, tx link, transcript. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
+**Result screen:** a big green "identical to the sealed record" or red "never sealed / modified"; the anchored time (big) vs device time (small); shortened wallet + Explorer link; duration, tx link, transcript. Footer always: *"This page proves the content wasn't altered after sealing — not that it's true."*
 
 ## Interface contracts
 
@@ -231,6 +231,6 @@ flowchart TD
 1. Problem: "Today you can't prove whether a recording was trimmed after the fact."
 2. Record 10 s (or pick a photo) → biometric approval → Sealed, Explorer link.
 3. Transcript appears on screen.
-4. Verification page: original file → ✅ match, time, wallet, Seeker badge.
+4. Verification page: original file → ✅ match, time, wallet.
 5. Trim one second / change one byte, re‑upload → ❌ no match.
 6. Close: who it's for (journalists, tenants, harassment victims), why Seeker, what we don't claim.

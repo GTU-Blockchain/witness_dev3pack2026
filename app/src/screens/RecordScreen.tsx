@@ -31,7 +31,6 @@ export type RecordScreenProps = {
   transcriptLabel?: string
   /** Small tag next to the transcript label, e.g. model/language. */
   transcriptTag?: string
-  deviceLabel?: string
   networkLabel?: string
   walletLabel?: string
   onStartRecording?: () => void
@@ -58,7 +57,6 @@ export function RecordScreen({
   transcript,
   transcriptLabel = 'ELEVENLABS LIVE TRANSCRIPT',
   transcriptTag,
-  deviceLabel = 'Seeker Genesis',
   networkLabel = 'Solana Devnet',
   walletLabel = 'Not connected',
   onStartRecording,
@@ -121,17 +119,15 @@ export function RecordScreen({
             </Text>
           </View>
         ) : (
-          /* Hardware status */
+          /* Status */
           <View style={styles.card}>
             <View style={styles.cardRow}>
-              <Text style={styles.eyebrow}>HARDWARE STATUS</Text>
-              <View style={styles.teeBadge}>
-                <Text style={styles.teeBadgeText}>TEE SECURE</Text>
-              </View>
+              <Text style={styles.eyebrow}>STATUS</Text>
+              <Text style={styles.cardValueSecondary}>{networkLabel}</Text>
             </View>
             <View style={styles.cardRow}>
-              <Text style={styles.cardValuePrimary}>{deviceLabel}</Text>
-              <Text style={styles.cardValueSecondary}>{networkLabel}</Text>
+              <Text style={styles.cardValuePrimary}>On-chain sealing</Text>
+              <Text style={styles.cardValueSecondary}>SHA-256 on device</Text>
             </View>
           </View>
         )}
@@ -315,18 +311,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: MONO,
     letterSpacing: 1.4,
-  },
-  teeBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.14)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  teeBadgeText: {
-    color: C.emerald,
-    fontSize: 12,
-    fontFamily: MONO,
-    letterSpacing: 1,
   },
   cardValuePrimary: {
     color: C.text,

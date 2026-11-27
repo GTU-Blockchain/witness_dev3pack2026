@@ -17,7 +17,7 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 | This file existed no later than time *T* | ✅ Yes | Solana block time (`anchored_at`) |
 | Not a single byte has changed since *T* | ✅ Yes | SHA‑256 match |
 | This wallet sealed it | ✅ Yes | Ed25519 transaction signature |
-| It came from a genuine Seeker device | 🟡 Strong hint | Seeker Genesis Token in the wallet |
+| It came from a genuine Seeker device | 🔜 Planned | Seeker Genesis Token (SGT) check — not yet implemented |
 | It was captured at location *L* | 🟡 Claim only | Phone GPS, not cryptographic |
 | The *content* is real / unstaged | ❌ No | You can hold a speaker to a mic. We say "unaltered", never "true" |
 
