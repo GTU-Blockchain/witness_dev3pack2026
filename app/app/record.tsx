@@ -1,8 +1,10 @@
+import { Alert } from 'react-native'
 import { Redirect, router } from 'expo-router'
+import * as DocumentPicker from 'expo-document-picker'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { RecordScreen } from '@/src/screens/RecordScreen'
 import { useRecorder } from '@/features/record/use-recorder'
-import { addRecording } from '@/features/record/recordings-store'
+import { addRecording, addSharedRecording } from '@/features/record/recordings-store'
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
 
@@ -23,6 +25,26 @@ export default function RecordRoute() {
     router.push({ pathname: '/seal', params: { id: item.id } })
   }
 
+  // Herhangi bir medya dosyasını seç → paylaşımla aynı kanıtlanmış hat (kopyala → /seal).
+  // Süre picker'dan gelmez (0); /seal zincirde `Math.max(1, …)` uyguladığı için sorun olmaz.
+  async function pickFile() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true })
+      if (res.canceled) return
+      const asset = res.assets?.[0]
+      if (!asset) return
+      const item = addSharedRecording(
+        asset.uri,
+        asset.name ?? `file-${Date.now()}`,
+        asset.mimeType ?? 'application/octet-stream',
+        0,
+      )
+      router.push({ pathname: '/seal', params: { id: item.id } })
+    } catch {
+      Alert.alert('Could not open file', 'The selected file could not be read. Please try another one.')
+    }
+  }
+
   return (
     <RecordScreen
       walletLabel={shortAddress(String(account.address))}
@@ -37,6 +59,7 @@ export default function RecordRoute() {
       onTogglePlayback={rec.togglePlayback}
       onDelete={rec.discard}
       onSeal={seal}
+      onPickFile={() => void pickFile()}
       onOpenRecordings={() => router.replace('/recordings')}
     />
   )

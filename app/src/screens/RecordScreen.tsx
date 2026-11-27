@@ -39,6 +39,8 @@ export type RecordScreenProps = {
   onTogglePlayback?: () => void
   /** Hand the captured file to sealing untouched — never re-encode or trim it. */
   onSeal?: (options: { locationEnabled: boolean }) => void
+  /** Pick an existing media file (photo/audio/video/doc) and seal it through the same flow. */
+  onPickFile?: () => void
   /** Called after the user confirms deletion. */
   onDelete?: () => void
   onOpenSettings?: () => void
@@ -63,6 +65,7 @@ export function RecordScreen({
   onStopRecording,
   onTogglePlayback,
   onSeal,
+  onPickFile,
   onDelete,
   onOpenSettings = () => void Linking.openSettings(),
   onOpenRecordings,
@@ -261,6 +264,17 @@ export function RecordScreen({
                   </Text>
                 </Pressable>
               )}
+
+              {/* Idle only: seal any existing media file through the same flow as a live recording. */}
+              {!isRecording && !captured && onPickFile ? (
+                <Pressable
+                  onPress={onPickFile}
+                  style={({ pressed }) => [styles.pickButton, pressed && styles.pressed]}
+                >
+                  <MaterialCommunityIcons name="file-upload-outline" size={20} color={C.emerald} />
+                  <Text style={styles.pickButtonText}>Seal an existing file</Text>
+                </Pressable>
+              ) : null}
             </View>
           </>
         )}
@@ -529,6 +543,22 @@ const styles = StyleSheet.create({
   },
   sealButton: {
     flex: 2,
+  },
+  pickButton: {
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  pickButtonText: {
+    color: C.text,
+    fontSize: 15,
+    fontWeight: '600',
   },
   disabled: {
     opacity: 0.5,
