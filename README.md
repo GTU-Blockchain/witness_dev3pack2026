@@ -131,17 +131,17 @@ Not implemented yet. Each item moves to [Built today](#built-today) only when it
 ## Cost
 
 Each seal creates one `Recording` account of `Recording::SPACE` = **126 bytes**
-([`lib.rs`](program/programs/witness/src/lib.rs)) and sends one transaction with one signature and no
-priority fee.
+([`lib.rs`](program/programs/witness/src/lib.rs)) and sends one transaction with one signature. The app adds
+no priority fee itself, but the wallet may: Phantom adds a compute-budget instruction.
 
 | | Per capture | How it was computed |
 | --- | --- | --- |
-| **Per seal today** (one account + one tx) | **≈ 0.001295 SOL** | Rent-exempt deposit 0.00129032 SOL (`solana rent 126`) + base fee 0.000005 SOL (5,000 lamports × 1 signature) |
-| **With Merkle rollup** (roadmap): one tx per batch of *N* | ≈ (0.000005 SOL + one root account's rent) / *N* | Not built. If the root account were also 126 bytes, *N* = 1,000 would come to ≈ 0.0000013 SOL per capture |
+| **Per seal today** (one account + one tx) | **≈ 0.0013–0.0014 SOL** | Rent-exempt deposit 0.00129032 SOL (`solana rent 126`) + network fee: 0.000005 SOL minimum (5,000 lamports × 1 signature); 0.00008 SOL as actually charged through Phantom on devnet (tx [`4kJ7…nctm`](https://explorer.solana.com/tx/4kJ7nzLYtLuzH41nhiTS6tuB2NR4i31xCuHc7a3fMj2sz7Vnq7ETcPwwG6yzr9QRkMNs9jFpPm8W45vz39T3nctm?cluster=devnet), 2026-11-28) |
+| **With Merkle rollup** (roadmap): one tx per batch of *N* | ≈ (network fee + one root account's rent) / *N* | Not built. If the root account were also 126 bytes, *N* = 1,000 would come to ≈ 0.0000014 SOL per capture even at Phantom's fee |
 
-The rent deposit is locked, not burned. The program has no `close` instruction on purpose (a proof must not be
-deletable), so it is never refunded. Devnet SOL is free; the figures above are what the same program would cost on
-mainnet.
+The rent deposit is the bulk of the cost. It is locked, not burned: the program has no `close` instruction on
+purpose (a proof must not be deletable), so it is never refunded. Devnet SOL is free; rent and the base fee are
+the same on mainnet, while priority fees depend on the wallet and network load.
 
 ## Known limitations (and planned fixes)
 
