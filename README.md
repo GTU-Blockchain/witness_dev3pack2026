@@ -189,7 +189,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | [`/program`](program) | Anchor program (`register_recording`), tests, IDL |
 | [`/web`](web) | Next.js verification page (`/`; `/v/<hash>` on the roadmap), deployed on Vercel |
 | [`/supabase`](supabase) | SQL migrations + Edge Functions (`register`, `transcribe`, `upload-url`) |
-| [`/docs`](docs) | Technical deep‑dive + fallback spec (and internal team‑planning docs, in Turkish) |
+| [`/docs`](docs) | Technical deep‑dive ([`TECHNICAL.md`](docs/TECHNICAL.md)); internal team‑planning notes (Turkish) under [`docs/internal`](docs/internal) |
 
 **Tech stack:** React Native / Expo dev build · Mobile Wallet Adapter · `@solana/web3.js` 1.x · Anchor 0.31.x (Rust) · Next.js · Supabase (Postgres + Edge Functions + Storage) · ElevenLabs Scribe.
 
@@ -206,3 +206,7 @@ Each folder's own README has setup steps. Deep dive: [`docs/TECHNICAL.md`](docs/
 ## Why Solana Mobile
 
 Signing goes through Mobile Wallet Adapter, so on a Seeker the key stays in Seed Vault; the app never holds a key. Every seal is an explicit approval in the wallet (biometric on Seed Vault). Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
+
+## License
+
+[MIT](LICENSE). The app scaffold under [`/app`](app) comes from the Solana Mobile Expo template and keeps its original [Apache 2.0 license](app/LICENSE).

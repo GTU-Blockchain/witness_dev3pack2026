@@ -13,7 +13,7 @@ Plan modundasın; plan onaylanmadan hiçbir dosya yazma, komut çalıştırma.
 
 Bağlam:
 - @docs/TECHNICAL.md projenin tek doğruluk kaynağı: mimari, Recording hesap yapısı, MWA akışı, hash/şifreleme kuralları, Supabase şeması, doğrulama sayfası, ortak kurallar.
-- @docs/TASK_BOARD.md görev listesi ve tarihler (25–29 Kasım 2026, İstanbul saati).
+- @docs/internal/TASK_BOARD.md görev listesi ve tarihler (25–29 Kasım 2026, İstanbul saati).
 - Proje: Witness. Seeker'da ses kaydı → SHA-256 → Seed Vault ile imzalanıp Solana devnet'e yazılır → web sayfası dosyayı tarayıcıda hash'leyip zincirle karşılaştırır.
 - Repo yapısı: /app (React Native + Expo dev build), /program (Anchor), /web (Next.js), /supabase (SQL + Edge Functions), /docs.
 
