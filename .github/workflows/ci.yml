@@ -51,7 +51,9 @@ jobs:
     name: program (anchor build)
     runs-on: ubuntu-latest
     env:
-      SOLANA_VERSION: 2.1.0
+      # 2.3.x ships platform-tools v1.48 (rustc 1.84), which the program and its locked
+      # deps need. Solana 2.1's default v1.43 (rustc 1.79) is too old.
+      SOLANA_VERSION: 2.3.0
       ANCHOR_VERSION: 0.31.1
     defaults:
       run:
@@ -82,10 +84,8 @@ jobs:
           chmod +x "$HOME/.local/bin/anchor"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: solana --version && anchor --version
-      # Solana 2.1.0 defaults to platform-tools v1.43 (rustc 1.79); the program and its
-      # locked deps need rustc 1.84, which ships with platform-tools v1.48.
-      # cargo-build-sbf 2.1.0 panics (read_dir().unwrap()) if ~/.cache/solana doesn't exist yet,
+      # cargo-build-sbf unwraps read_dir(~/.cache/solana) and panics if it doesn't exist yet,
       # which is the case on a fresh runner with a cold cache.
-      - run: mkdir -p ~/.cache/solana && anchor build -- --tools-version v1.48
+      - run: mkdir -p ~/.cache/solana && anchor build
       - name: Check the program was actually built
         run: test -s target/deploy/witness.so && test -s target/idl/witness.json && ls -l target/deploy/witness.so

@@ -9,7 +9,7 @@ The program's only job: open a typed, write‑once record account for each file 
 ```bash
 cd program
 yarn install
-anchor build -- --tools-version v1.48   # rustc 1.84; Solana 2.1's default v1.43 (rustc 1.79) is too old
+anchor build              # needs Solana CLI 2.3.x (platform-tools v1.48, rustc 1.84); 2.1's tools are too old
 anchor keys sync          # updates declare_id! and Anchor.toml with the real ID
 anchor test               # localnet (4 scenarios)
 anchor deploy --provider.cluster devnet
