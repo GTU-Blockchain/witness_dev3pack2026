@@ -78,6 +78,24 @@ Every entry point copies the file untouched and flows into the exact same seal p
 2. **Share** — "Share → Witness" from any app (gallery, camera, recorder, Files). Photos, video, audio, PDF.
 3. **Pick a file** — "Seal an existing file" opens the system picker for any media. Share‑sheet‑independent, so it works reliably even on stage.
 
+## Example: one real use case
+
+A tenant records a walkthrough video at move-out and seals it. Months later, in a deposit dispute, the
+landlord opens the verifier, drops the file in, and sees that it existed on that date and hasn't changed by a
+single byte. No account, no app, no trust in Witness.
+
+## Why not just C2PA / Truepic / OpenTimestamps?
+
+| | Where the proof lives | Who you trust | Strippable? |
+| --- | --- | --- | --- |
+| C2PA / Content Credentials | Manifest embedded in the file | Certificate authorities / signer PKI | Yes: re-saving or uploading usually drops it |
+| Truepic-style capture apps | Vendor servers | The vendor | n/a |
+| OpenTimestamps | Bitcoin, aggregated | Calendar servers for freshness | No, but no signer identity, slow confirmation |
+| **Witness** | Solana account, content-addressed | Nobody: re-hash + RPC read | No: the proof is external to the file |
+
+Witness is complementary to C2PA: a C2PA manifest can carry a Witness anchor so the timestamp survives even
+when the manifest is stripped (see [Roadmap](#roadmap)).
+
 ## Vision: Witness as a Solana Mobile layer
 
 The app is the core loop. The goal is for it to stop being an app at all.
@@ -108,6 +126,21 @@ Not implemented yet. Each item moves to [Built today](#built-today) only when it
 - [ ] Device attestation: Seeker Genesis Token check and/or Android Key Attestation for in-app captures
 - [ ] End-to-end encrypted share links (`/v/<hash>#k=<key>`, AES‑256‑GCM)
 - [ ] C2PA interop: emit a Content Credentials manifest that carries the Solana anchor
+
+## Cost
+
+Each seal creates one `Recording` account of `Recording::SPACE` = **126 bytes**
+([`lib.rs`](program/programs/witness/src/lib.rs)) and sends one transaction with one signature and no
+priority fee.
+
+| | Per capture | How it was computed |
+| --- | --- | --- |
+| **Per seal today** (one account + one tx) | **≈ 0.001295 SOL** | Rent-exempt deposit 0.00129032 SOL (`solana rent 126`) + base fee 0.000005 SOL (5,000 lamports × 1 signature) |
+| **With Merkle rollup** (roadmap): one tx per batch of *N* | ≈ (0.000005 SOL + one root account's rent) / *N* | Not built. If the root account were also 126 bytes, *N* = 1,000 would come to ≈ 0.0000013 SOL per capture |
+
+The rent deposit is locked, not burned. The program has no `close` instruction on purpose (a proof must not be
+deletable), so it is never refunded. Devnet SOL is free; the figures above are what the same program would cost on
+mainnet.
 
 ## Known limitations (and planned fixes)
 
