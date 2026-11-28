@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
-import { LAMPORTS_PER_SOL, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js'
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import type { SealStep } from '@/src/screens/SealingScreen'
 import { sha256HexOfFile } from '@/utils/witness-hash'
 import { buildRegisterRecordingIx } from '@/utils/witness-program'
 import { getRecording, updateRecording, useRecordings } from '@/features/record/recordings-store'
 import { syncRecordingToBackend } from '@/features/record/backend-sync'
-
-// Kayıt hesabının kirası (~0.0018 SOL) + işlem ücreti için pay bırakılmış alt sınır.
-const MIN_BALANCE_LAMPORTS = 0.003 * LAMPORTS_PER_SOL
+import { MIN_BALANCE_LAMPORTS } from '@/features/wallet/devnet-sol'
 
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2)
@@ -97,7 +95,7 @@ export function useSeal(id: string) {
       // Ücret + kayıt hesabının kirası için devnet SOL gerekir; yoksa cüzdan sessizce zaman aşımına düşüyor.
       const balance = await connection.getBalance(payer)
       if (balance < MIN_BALANCE_LAMPORTS) {
-        throw new Error('Not enough devnet SOL in your wallet. Get some at faucet.solana.com, then try again.')
+        throw new Error('Not enough devnet SOL in your wallet to pay for the seal. Get some below, then try again.')
       }
 
       const {
