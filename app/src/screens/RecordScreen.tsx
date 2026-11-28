@@ -92,11 +92,7 @@ export function RecordScreen({
     ])
   }
 
-  const statusHeadline = isRecording
-    ? 'RECORDING IN PROGRESS'
-    : captured
-      ? 'RECORDING CAPTURED'
-      : 'FORENSIC AUDIO READY'
+  const statusHeadline = isRecording ? 'RECORDING IN PROGRESS' : captured ? 'RECORDING CAPTURED' : 'READY TO RECORD'
   const timerMillis = captured && (isPlaying || playbackMillis > 0) ? playbackMillis : durationMillis
 
   return (
@@ -112,7 +108,9 @@ export function RecordScreen({
                 <View style={styles.recDot} />
                 <Text style={styles.recBadgeText}>RECORDING</Text>
               </View>
-              <Text style={styles.cardValueSecondary}>{locationEnabled ? 'Location not recorded yet' : 'Location Hidden'}</Text>
+              <Text style={styles.cardValueSecondary}>
+                {locationEnabled ? 'Location not recorded yet' : 'Location Hidden'}
+              </Text>
             </View>
             <Text style={styles.hashText} numberOfLines={1}>
               SHA-256: {streamHash ? `${streamHash.slice(0, 16)}...` : 'computed when you seal'}
@@ -263,10 +261,7 @@ export function RecordScreen({
 
               {/* Idle only: seal any existing media file through the same flow as a live recording. */}
               {!isRecording && !captured && onPickFile ? (
-                <Pressable
-                  onPress={onPickFile}
-                  style={({ pressed }) => [styles.pickButton, pressed && styles.pressed]}
-                >
+                <Pressable onPress={onPickFile} style={({ pressed }) => [styles.pickButton, pressed && styles.pressed]}>
                   <MaterialCommunityIcons name="file-upload-outline" size={20} color={C.emerald} />
                   <Text style={styles.pickButtonText}>Seal an existing file</Text>
                 </Pressable>

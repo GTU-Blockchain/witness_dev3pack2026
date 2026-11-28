@@ -12,9 +12,9 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 
 ## For judges
 
-- **APK:** [`witness-v1.0.0-hackathon.apk`](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/download/v1.0.0-hackathon/witness-v1.0.0-hackathon.apk) from the [v1.0.0-hackathon release](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/tag/v1.0.0-hackathon) (Android 7+, phones and emulators). Everything runs on **Solana devnet**.
+- **APK:** [`witness-v1.0.1-hackathon.apk`](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/download/v1.0.1-hackathon/witness-v1.0.1-hackathon.apk) from the [v1.0.1-hackathon release](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/tag/v1.0.1-hackathon) (Android 7+, phones and emulators). Everything runs on **Solana devnet**.
 - **Wallet:** any Mobile Wallet Adapter wallet on devnet. Tested on a fresh emulator with Solana Mobile's [Fake Wallet](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/android/fakewallet): tap **Authorize**, and for each seal **Authorize** → **Send transaction to cluster**. Phantom works too (Settings → Developer settings → Testnet mode → Solana Devnet).
-- **Devnet SOL** (~0.0014 SOL per seal): a new wallet has 0 SOL, so after connecting the app offers **Get devnet SOL**. Solana has closed the devnet RPC airdrop, so the app shows your address to copy into [faucet.solana.com](https://faucet.solana.com) (sign in with GitHub, choose devnet). The balance updates when you come back.
+- **Devnet SOL:** needs ~0.003 devnet SOL. The public RPC faucet is closed; use [faucet.solana.com](https://faucet.solana.com) (GitHub sign-in) or any funded devnet wallet. After you connect, tap **Get devnet SOL**: the app shows your address with a **Copy** button, and the balance updates when you come back.
 - **Test path (5 steps):**
   1. **Connect** the wallet, then get devnet SOL.
   2. **Seal an existing file** (any photo or document on the phone). Recording a voice note also works, but the recording stays inside the app, so you can't pick it in step 5.
