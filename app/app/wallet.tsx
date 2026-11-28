@@ -1,19 +1,13 @@
 import React from 'react'
-import { Link, Redirect } from 'expo-router'
+import { Link } from 'expo-router'
 import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { C } from '@/constants/theme'
 import { WalletScreen } from '@/features/wallet/wallet-screen'
 
 export default function WalletRoute() {
-  const { account } = useMobileWallet()
-
-  // Cüzdan bağlanınca doğrudan kayıt ekranına geç.
-  if (account) {
-    return <Redirect href="/record" />
-  }
-
+  // Once connected, WalletScreen moves on to /record by itself, unless the wallet has
+  // no devnet SOL yet; then it stays here and offers the airdrop.
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       <WalletScreen />

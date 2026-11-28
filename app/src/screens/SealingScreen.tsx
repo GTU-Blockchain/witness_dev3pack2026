@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import Clipboard from '@react-native-clipboard/clipboard'
-import { type ComponentProps, useEffect, useState } from 'react'
+import { type ComponentProps, type ReactNode, useEffect, useState } from 'react'
 import { ActivityIndicator, Animated, Easing, Linking, Pressable, Share, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppHeader, C, HashText, MONO, TabBar, formatDuration } from '@/src/components/witness-ui'
@@ -27,6 +27,8 @@ export type SealingScreenProps = {
   verificationUrl?: string
   walletLabel?: string
   networkLabel?: string
+  /** Shown instead of the approval card when the wallet can't pay for the seal (e.g. "Get devnet SOL"). */
+  funding?: ReactNode
   onApprove?: () => void
   onRetry?: () => void
   onNewRecording?: () => void
@@ -53,6 +55,7 @@ export function SealingScreen({
   verificationUrl,
   walletLabel = 'Not connected',
   networkLabel = 'Solana Devnet',
+  funding,
   onApprove,
   onRetry,
   onNewRecording,
@@ -99,6 +102,7 @@ export function SealingScreen({
               walletLabel={walletLabel}
               networkLabel={networkLabel}
               scanPhase={scanPhase}
+              funding={funding}
             />
           )}
         </View>
@@ -116,6 +120,8 @@ export function SealingScreen({
               <PrimaryButton icon="refresh" label="Try Again" onPress={onRetry} />
               <SecondaryButton icon="folder-star-outline" label="Keep as Pending" onPress={onOpenRecordings} />
             </>
+          ) : step === 'awaiting-approval' && funding ? (
+            <PrimaryButton icon="fingerprint" label="Get devnet SOL first" disabled />
           ) : step === 'awaiting-approval' ? (
             <PrimaryButton
               icon={scanPhase === 'approved' ? 'check-circle-outline' : 'fingerprint'}
@@ -151,6 +157,7 @@ function ProgressView({
   walletLabel,
   networkLabel,
   scanPhase,
+  funding,
 }: {
   step: SealStep
   error?: string
@@ -158,6 +165,7 @@ function ProgressView({
   walletLabel: string
   networkLabel: string
   scanPhase: ScanPhase
+  funding?: ReactNode
 }) {
   const current = STEPS.findIndex((s) => s.key === step)
 
@@ -235,11 +243,17 @@ function ProgressView({
           <Text style={styles.errorText} numberOfLines={3}>
             {error}
           </Text>
-          <Text style={styles.mutedText}>
-            Your recording is safe on this device and stays Pending until it is sealed. Nothing was deleted.
-          </Text>
+          {funding ? null : (
+            <Text style={styles.mutedText}>
+              Your recording is safe on this device and stays Pending until it is sealed. Nothing was deleted.
+            </Text>
+          )}
         </View>
-      ) : step === 'awaiting-approval' ? (
+      ) : null}
+
+      {funding && (error || step === 'awaiting-approval') ? (
+        funding
+      ) : !error && step === 'awaiting-approval' ? (
         /* Wallet approval card */
         <View style={[styles.card, styles.approvalCard]}>
           <View style={styles.halo}>

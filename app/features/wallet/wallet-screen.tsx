@@ -1,13 +1,11 @@
-import React, { useState } from 'react'
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import React, { type ReactNode, useState } from 'react'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Redirect, router } from 'expo-router'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { AppHeader } from '@/components/app-header'
 import { C, MONO } from '@/constants/theme'
-import { useAccountGetBalance } from '@/features/account/use-account-get-balance'
-
-const LOW_BALANCE_SOL = 0.05
-const FAUCET_URL = 'https://faucet.solana.com'
+import { DevnetSolCard, useDevnetSol } from '@/features/wallet/devnet-sol'
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
 
@@ -20,6 +18,11 @@ type WalletViewProps = {
   error?: string | null
   connecting?: boolean
   onConnect: () => void
+  /** Connected only: e.g. the "Get devnet SOL" card. */
+  funding?: ReactNode
+  /** Connected only: true when the wallet can't pay for a seal yet. */
+  needsSol?: boolean
+  onContinue?: () => void
 }
 
 export function WalletView({
@@ -30,9 +33,10 @@ export function WalletView({
   error,
   connecting,
   onConnect,
+  funding,
+  needsSol,
+  onContinue,
 }: WalletViewProps) {
-  const isLow = balanceSol !== null && balanceSol < LOW_BALANCE_SOL
-
   return (
     <View style={styles.screen}>
       <AppHeader walletLabel={address ? shortAddress(address) : undefined} />
@@ -72,12 +76,14 @@ export function WalletView({
             )}
           </View>
 
-          {isLow ? (
-            <View style={styles.warning}>
-              <Text style={styles.warningTitle}>LOW BALANCE</Text>
-              <Text style={styles.warningText}>You need devnet SOL to seal recordings.</Text>
-              <SecondaryButton title="Open Faucet" onPress={() => Linking.openURL(FAUCET_URL)} />
-            </View>
+          {funding}
+
+          {onContinue ? (
+            needsSol ? (
+              <SecondaryButton title="Continue without SOL" onPress={onContinue} />
+            ) : (
+              <PrimaryButton title="Continue" onPress={onContinue} />
+            )
           ) : null}
         </View>
       )}
@@ -92,11 +98,7 @@ function PrimaryButton({ title, loading, onPress }: { title: string; loading?: b
       onPress={onPress}
       style={({ pressed }) => [styles.primaryButton, (pressed || loading) && styles.pressed]}
     >
-      {loading ? (
-        <ActivityIndicator color={C.onEmerald} />
-      ) : (
-        <Text style={styles.primaryButtonText}>{title}</Text>
-      )}
+      {loading ? <ActivityIndicator color={C.onEmerald} /> : <Text style={styles.primaryButtonText}>{title}</Text>}
     </Pressable>
   )
 }
@@ -110,20 +112,34 @@ function SecondaryButton({ title, onPress }: { title: string; onPress: () => voi
 }
 
 // ---- Bağlıyken bakiyeyi okuyan parça (hook'u koşullu çağıramayız, o yüzden ayrı) ----
+// A fresh (e.g. a judge's) wallet has 0 SOL and can't pay for a seal: keep it here with a
+// "Get devnet SOL" button. A funded wallet goes straight on to recording, as before.
 function ConnectedWallet({ address, networkLabel }: { address: PublicKey; networkLabel: string }) {
   // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de);
   // getBalance PublicKey beklediği için normalize et (bkz. account-feature-seal-shared.tsx).
   const publicKey = address instanceof PublicKey ? address : new PublicKey(address as unknown as string)
-  const { data: lamports, isError } = useAccountGetBalance({ address: publicKey })
-  const balanceSol = typeof lamports === 'number' ? lamports / LAMPORTS_PER_SOL : null
+  const devnet = useDevnetSol(publicKey)
+  const balanceSol = devnet.lamports !== null ? devnet.lamports / LAMPORTS_PER_SOL : null
+
+  // Decide once, on the first balance read, so the screen doesn't jump away right after an airdrop.
+  const [route, setRoute] = useState<'pending' | 'stay' | 'record'>('pending')
+  if (route === 'pending') {
+    if (!devnet.isDevnet) setRoute('record')
+    else if (devnet.lamports !== null) setRoute(devnet.isLow ? 'stay' : 'record')
+    else if (devnet.balanceError) setRoute('stay')
+  }
+  if (route === 'record') return <Redirect href="/record" />
 
   return (
     <WalletView
       address={publicKey.toString()}
       balanceSol={balanceSol}
-      balanceError={isError}
+      balanceError={devnet.balanceError}
       networkLabel={networkLabel}
       onConnect={() => {}}
+      funding={<DevnetSolCard devnet={devnet} />}
+      needsSol={devnet.isLow || devnet.lamports === null}
+      onContinue={() => router.replace('/record')}
     />
   )
 }
@@ -151,7 +167,7 @@ export function WalletScreen() {
             setConnecting(true)
             await connect()
           } catch {
-            setError("Couldn't connect. Is a wallet app installed?")
+            setError("Couldn't connect. Make sure a Solana wallet app is installed, then approve within a minute.")
           } finally {
             setConnecting(false)
           }
@@ -178,9 +194,6 @@ const styles = StyleSheet.create({
   network: { color: C.textSoft, fontFamily: MONO, fontSize: 13 },
   balance: { color: C.text, fontFamily: MONO, fontSize: 40, fontWeight: '500' },
   balanceLoading: { color: C.muted, fontFamily: MONO, fontSize: 14 },
-  warning: { backgroundColor: C.redSoft, borderColor: C.red, borderWidth: 1, borderRadius: 20, padding: 18, gap: 10 },
-  warningTitle: { color: C.red, fontSize: 12, fontFamily: MONO, letterSpacing: 1.4 },
-  warningText: { color: C.text, fontSize: 14 },
   errorText: { color: C.red, fontSize: 13, textAlign: 'center' },
   primaryButton: {
     height: 60,

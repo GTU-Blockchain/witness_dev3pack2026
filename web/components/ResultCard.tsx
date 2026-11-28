@@ -1,7 +1,7 @@
 'use client'
 // 4: Sonuç kartı — büyük ✅/❌, ses dosyalarında dalga formu, "en geç şu tarihte vardı".
 // Teknik alanlar (hash, cüzdan, tx, PDA…) "Detaylar" pop-up'ında (DetailsModal).
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LookupResult } from '@/lib/recording'
 import { findSealSignature } from '@/lib/recording'
 import { formatIstanbul } from '@/lib/format'
@@ -29,6 +29,13 @@ export function ResultCard({
   const sealed = result.status === 'sealed'
   const [sig, setSig] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // On a phone the card can land below the fold (e.g. under the record on /v/<hash>):
+  // bring it into view, so picking a file visibly does something. No-op when already visible.
+  useEffect(() => {
+    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [])
 
   useEffect(() => {
     setSig(null)
@@ -43,7 +50,7 @@ export function ResultCard({
   }, [result])
 
   return (
-    <div className={`result ${sealed ? 'r-ok' : 'r-bad'}`}>
+    <div ref={cardRef} className={`result ${sealed ? 'r-ok' : 'r-bad'}`}>
       <div className="head">
         <div className="badge">{sealed ? '✓' : '✕'}</div>
         <h2>{sealed ? 'Unaltered' : (badTitle ?? "Doesn't match the sealed record")}</h2>
