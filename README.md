@@ -12,7 +12,7 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 
 ## For judges
 
-- **APK:** [`witness-v1.0.1-hackathon.apk`](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/download/v1.0.1-hackathon/witness-v1.0.1-hackathon.apk) from the [v1.0.1-hackathon release](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/tag/v1.0.1-hackathon) (Android 7+, phones and emulators). Everything runs on **Solana devnet**.
+- **APK:** [`witness-v1.0.2-hackathon.apk`](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/download/v1.0.2-hackathon/witness-v1.0.2-hackathon.apk) from the [v1.0.2-hackathon release](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/tag/v1.0.2-hackathon) (Android 7+, phones and emulators). Everything runs on **Solana devnet**.
 - **Wallet:** any Mobile Wallet Adapter wallet on devnet. Tested on a fresh emulator with Solana Mobile's [Fake Wallet](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/android/fakewallet): tap **Authorize**, and for each seal **Authorize** → **Send transaction to cluster**. Phantom works too (Settings → Developer settings → Testnet mode → Solana Devnet).
 - **Devnet SOL:** needs ~0.003 devnet SOL. The public RPC faucet is closed; use [faucet.solana.com](https://faucet.solana.com) (GitHub sign-in) or any funded devnet wallet. After you connect, tap **Get devnet SOL**: the app shows your address with a **Copy** button, and the balance updates when you come back.
 - **Test path (5 steps):**
