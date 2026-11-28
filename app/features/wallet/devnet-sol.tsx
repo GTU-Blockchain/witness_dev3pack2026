@@ -20,7 +20,7 @@ type AirdropState =
   | { kind: 'requesting' }
   | { kind: 'confirming' }
   | { kind: 'done' }
-  | { kind: 'failed'; message: string }
+  | { kind: 'failed'; message: string; closed: boolean }
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -38,8 +38,16 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   })
 }
 
+// Public devnet RPC answers requestAirdrop with 410 "The RPC faucet is closed on this cluster"
+// (seen 2026-11-28). Other RPCs or a reopened faucet still work, so we keep trying it first.
+function isFaucetClosed(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e)
+  return (e as { code?: unknown })?.code === 410 || /faucet is closed|\b410\b/i.test(msg)
+}
+
 function airdropErrorMessage(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e)
+  if (isFaucetClosed(e)) return "Solana's devnet no longer sends SOL to apps directly."
   if (/429|too many|rate.?limit|limit/i.test(msg))
     return 'The devnet faucet is rate-limited right now, so no SOL was sent.'
   if (/timed out|expired|block height/i.test(msg))
@@ -86,7 +94,7 @@ export function useDevnetSol(address: PublicKey) {
       await refetch()
       setAirdrop({ kind: 'done' })
     } catch (e) {
-      setAirdrop({ kind: 'failed', message: airdropErrorMessage(e) })
+      setAirdrop({ kind: 'failed', message: airdropErrorMessage(e), closed: isFaucetClosed(e) })
       void refetch()
     }
   }
@@ -117,20 +125,30 @@ export function DevnetSolCard({ devnet }: { devnet: DevnetSol }) {
   const busy = airdrop.kind === 'requesting' || airdrop.kind === 'confirming'
   const address = devnet.address.toBase58()
 
+  // Enough SOL (from the airdrop, the web faucet or anywhere else): nothing left to do here.
+  if (lamports !== null && !isLow) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.eyebrow}>DEVNET SOL</Text>
+        <Text style={styles.ok}>
+          {airdrop.kind === 'done'
+            ? '✓ 1 devnet SOL received. You can seal now.'
+            : `✓ This wallet has ${sol(lamports)} SOL, enough to seal.`}
+        </Text>
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.card, isLow && styles.cardLow]}>
       <Text style={[styles.eyebrow, isLow && styles.eyebrowLow]}>{isLow ? 'YOU NEED DEVNET SOL' : 'DEVNET SOL'}</Text>
 
-      {airdrop.kind === 'done' && !isLow ? (
-        <Text style={styles.ok}>✓ 1 devnet SOL received. You can seal now.</Text>
-      ) : (
-        <Text style={styles.text}>
-          Sealing pays a small deposit on Solana devnet (about 0.0014 SOL of free test tokens).
-          {lamports !== null ? ` This wallet has ${sol(lamports)} SOL.` : ''}
-        </Text>
-      )}
+      <Text style={styles.text}>
+        Sealing pays a small deposit on Solana devnet (about 0.0014 SOL of free test tokens).
+        {lamports !== null ? ` This wallet has ${sol(lamports)} SOL.` : ''}
+      </Text>
 
-      {airdrop.kind !== 'done' || isLow ? (
+      {airdrop.kind === 'failed' && airdrop.closed ? null : (
         <Button
           primary
           label={
@@ -143,13 +161,14 @@ export function DevnetSolCard({ devnet }: { devnet: DevnetSol }) {
           loading={busy}
           onPress={devnet.requestAirdrop}
         />
-      ) : null}
+      )}
 
       {airdrop.kind === 'failed' ? (
         <View style={styles.fallback}>
-          <Text style={styles.error}>{airdrop.message}</Text>
+          <Text style={airdrop.closed ? styles.notice : styles.error}>{airdrop.message}</Text>
           <Text style={styles.text}>
-            Use the web faucet instead: copy your address, paste it at faucet.solana.com (Devnet), then come back here.
+            Use the web faucet instead: copy your address, open faucet.solana.com, sign in with GitHub, paste the
+            address (devnet), then come back here. The balance updates by itself.
           </Text>
           <Text style={styles.address} selectable>
             {address}
@@ -211,6 +230,7 @@ const styles = StyleSheet.create({
   eyebrowLow: { color: C.amber },
   text: { color: C.textSoft, fontSize: 13, lineHeight: 19 },
   ok: { color: C.emerald, fontSize: 14, fontWeight: '600' },
+  notice: { color: C.amber, fontSize: 13, lineHeight: 19, fontWeight: '600' },
   error: { color: C.red, fontSize: 13, lineHeight: 19, fontWeight: '600' },
   fallback: { gap: 8 },
   address: {

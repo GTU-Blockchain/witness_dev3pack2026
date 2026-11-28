@@ -13,18 +13,16 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 ## For judges
 
 - **APK:** [`witness-v1.0.0-hackathon.apk`](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/download/v1.0.0-hackathon/witness-v1.0.0-hackathon.apk) from the [v1.0.0-hackathon release](https://github.com/GTU-Blockchain/witness_dev3pack2026/releases/tag/v1.0.0-hackathon) (Android 7+, phones and emulators). Everything runs on **Solana devnet**.
-- **Wallet:** any Mobile Wallet Adapter wallet on devnet: Solana Mobile's [Fake Wallet](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/android/fakewallet) (tested on a fresh emulator), or Phantom with Testnet mode → Solana Devnet.
-- **Devnet SOL:** a new wallet has 0 SOL. After connecting, tap **Get devnet SOL** (1 SOL airdrop). If the public faucet is rate-limited, the app shows your address to copy into [faucet.solana.com](https://faucet.solana.com).
+- **Wallet:** any Mobile Wallet Adapter wallet on devnet. Tested on a fresh emulator with Solana Mobile's [Fake Wallet](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/android/fakewallet): tap **Authorize**, and for each seal **Authorize** → **Send transaction to cluster**. Phantom works too (Settings → Developer settings → Testnet mode → Solana Devnet).
+- **Devnet SOL** (~0.0014 SOL per seal): a new wallet has 0 SOL, so after connecting the app offers **Get devnet SOL**. Solana has closed the devnet RPC airdrop, so the app shows your address to copy into [faucet.solana.com](https://faucet.solana.com) (sign in with GitHub, choose devnet). The balance updates when you come back.
 - **Test path (5 steps):**
   1. **Connect** the wallet, then get devnet SOL.
-  2. **Seal an existing file** (any photo or document on the phone). Recording a voice note also works, but the recording stays inside the app, so you can't drop it in step 5.
-  3. **Approve** in the wallet. The app writes the SHA‑256 to the chain.
+  2. **Seal an existing file** (any photo or document on the phone). Recording a voice note also works, but the recording stays inside the app, so you can't pick it in step 5.
+  3. **Approve** in the wallet. The app writes the SHA‑256 to the chain. If devnet drops the transaction, tap **Try Again**.
   4. **Share**, then open the `/v/<hash>` link in the phone's browser.
   5. **Pick the same file:** ✅ Unaltered. Pick any other or edited file: ❌.
 - **Live verifier:** https://web-pi-cyan-30.vercel.app · an example sealed record: [`/v/9d48bc02…`](https://web-pi-cyan-30.vercel.app/v/9d48bc02b1b57fb0adc4babb47de969dcfa6c29cc8414f112d885896d9569af0)
 - **Built on** Solana Mobile's official [`expo-web3js-minimal`](https://github.com/solana-mobile/templates/tree/main/mobile/expo-web3js-minimal) template.
-
----
 
 ## What it proves (and what it doesn't)
 
