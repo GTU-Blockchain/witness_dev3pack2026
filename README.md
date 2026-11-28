@@ -4,7 +4,7 @@
 
 **Witness is a mobile app for people whose photos and recordings get questioned (tenants, journalists, insurance claimants) that seals a file's fingerprint on Solana, so anyone can later prove it hasn't changed.**
 
-**[Pitch deck](docs/Witness_Pitch.pdf)** (PDF, 13 slides) · **[Demo video](https://youtu.be/3xsx3oWeymk)** · **[Live verifier](https://web-pi-cyan-30.vercel.app)** · **[X: @witness_sol](https://x.com/witness_sol)**
+**[Pitch deck](docs/Witness_Pitch.pdf)** (PDF, 14 slides) · **[Demo video](https://youtu.be/3xsx3oWeymk)** · **[Live verifier](https://web-pi-cyan-30.vercel.app)** · **[X: @witness_sol](https://x.com/witness_sol)**
 
 ## Problem
 
