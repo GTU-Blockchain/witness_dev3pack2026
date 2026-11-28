@@ -6,7 +6,7 @@ Next.js + `@solana/web3.js` + `@coral-xyz/anchor`, deployed on Vercel. Verificat
 
 ## Setup
 
-> The `/web` scaffold is **already set up** and live on Vercel. **Do not** run `create-next-app` on top of it — it would delete existing files and `public/.well-known/assetlinks.json`.
+> The `/web` scaffold is **already set up** and live on Vercel. **Do not** run `create-next-app` on top of it — it would delete existing files, including the `/.well-known/assetlinks.json` route.
 
 ```bash
 cd web
@@ -16,7 +16,7 @@ npm run dev
 
 ### ⚠️ Do not touch assetlinks.json
 
-`public/.well-known/assetlinks.json` is required for the mobile app's MWA dApp‑identity verification (Android App Links). This domain (`web-pi-cyan-30.vercel.app`) must match the `uri` in `app/constants/app-config.ts` exactly; deleting/moving it makes Phantom reject signing. If you change the domain, update both `app-config.ts` and the package/fingerprint in assetlinks together.
+`app/.well-known/assetlinks.json/route.ts` serves the Digital Asset Links file required for the mobile app's MWA dApp‑identity verification (Android App Links). It is a route handler, not a file in `public/`, because wallets require the Content‑Type to be exactly `application/json` and Vercel serves `public/` JSON with `; charset=utf-8` appended. This domain (`web-pi-cyan-30.vercel.app`) must match the `uri` in `app/constants/app-config.ts` exactly; deleting/moving it makes Phantom reject signing. If you change the domain, update both `app-config.ts` and the package/fingerprint in assetlinks together.
 
 ## Pages
 
