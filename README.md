@@ -4,6 +4,8 @@
 
 **A mobile notary for media. Seal any photo, audio, video or document on Solana and let anyone prove it hasn't changed since.**
 
+**[Pitch deck](docs/Witness_Pitch.pdf)** (PDF, 13 slides) · **[Demo video](https://youtu.be/3xsx3oWeymk)** · **[Live verifier](https://web-pi-cyan-30.vercel.app)** · **[X: @witness_sol](https://x.com/witness_sol)**
+
 Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and has the user sign an on‑chain record through Mobile Wallet Adapter (Seed Vault on a Seeker, Phantom elsewhere; the app never holds a key). The file itself never leaves the phone. Later, anyone can drop the same file into a public web page that re‑hashes it in the browser and checks the chain:
 
 > **✅ identical to the sealed record** — or — **❌ never sealed / modified since.**
@@ -39,6 +41,8 @@ Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and h
 
 - **Verification site:** https://web-pi-cyan-30.vercel.app (hashes in your browser, reads straight from Solana RPC — you don't have to trust us)
 - **Program (devnet):** [`2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ`](https://explorer.solana.com/address/2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ?cluster=devnet)
+- **Demo video:** https://youtu.be/3xsx3oWeymk (real footage: the v1.0.2 APK with Phantom on devnet, then the live verifier)
+- **On X:** [@witness_sol](https://x.com/witness_sol) · [launch thread](https://x.com/witness_sol/status/2126610466655158741)
 - **Status:** full flow proven end‑to‑end on devnet — audio recordings and shared/picked photos sealed, then independently re‑verified (browser hash + `getAccountInfo` on the PDA, byte‑for‑byte match).
 - **A real seal you can check:** an 11‑second voice note recorded in the app and approved in Phantom on the Android emulator (2026‑11‑28; the emulator's mic is silent, hence the flat waveform below).
   - Transaction: [`4kJ7…nctm`](https://explorer.solana.com/tx/4kJ7nzLYtLuzH41nhiTS6tuB2NR4i31xCuHc7a3fMj2sz7Vnq7ETcPwwG6yzr9QRkMNs9jFpPm8W45vz39T3nctm?cluster=devnet) (Solana Explorer, devnet)
@@ -155,6 +159,7 @@ Not implemented yet. Each item moves to [Built today](#built-today) only when it
 - [ ] Device attestation: Seeker Genesis Token check and/or Android Key Attestation for in-app captures
 - [ ] End-to-end encrypted share links (`/v/<hash>#k=<key>`, AES‑256‑GCM)
 - [ ] C2PA interop: emit a Content Credentials manifest that carries the Solana anchor
+- [ ] Per-wallet records (v2): no hash squatting. Seeds `["rec", authority, hash]`, so every wallet attests independently and the verifier shows the earliest ([details](#known-limitations-and-planned-fixes))
 
 ## Cost
 
@@ -171,6 +176,18 @@ Each seal creates one `Recording` account of `Recording::SPACE` = **126 bytes**
 The rent deposit is the bulk of the cost. It is locked, not burned: the program has no `close` instruction on
 purpose (a proof must not be deletable), so it is never refunded. Devnet SOL is free; rent and the base fee are
 the same on mainnet, while priority fees depend on the wallet and network load.
+
+## Business model
+
+**Free to verify, forever. Paid to seal at scale.** These are plans, not built features; none of it is in the code.
+
+- **Individuals: free.** Verifying any file costs nothing. Sealing costs the user the ~0.0014 SOL seal cost
+  ([Cost](#cost)), paid from their own wallet; none of it goes to us.
+- **Organizations: priced per seal.** An SDK and API for insurance claims, rentals and property inspection,
+  proof of delivery, and newsrooms. The [Merkle rollup](#roadmap) (roadmap) is what makes that margin possible:
+  one on-chain root per batch instead of one account per capture.
+- **Platform: a capture layer on Solana Mobile** ([Vision](#vision-witness-as-a-solana-mobile-layer)), run as a public good.
+- **No protocol fee in the program.** It stays no-admin and no-fee, and verification stays free.
 
 ## Known limitations (and planned fixes)
 

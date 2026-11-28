@@ -2,6 +2,8 @@
 
 **Judge‑facing (English):**
 
+- [`Witness_Pitch.pdf`](Witness_Pitch.pdf) — pitch deck (13 slides).
+
 - [`TECHNICAL.md`](TECHNICAL.md) — technical source of truth: architecture, account layout, MWA flow, hash/encryption, Supabase, verification page, interface contracts.
 
 **Internal team planning (Turkish, not part of the submission):** [`internal/`](internal)
