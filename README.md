@@ -252,7 +252,7 @@ Each folder's own README has setup steps. Deep dive: [`docs/TECHNICAL.md`](docs/
 
 ## Why Solana Mobile
 
-Signing goes through Mobile Wallet Adapter, so on a Seeker the key stays in Seed Vault; the app never holds a key. Every seal is an explicit approval in the wallet (biometric on Seed Vault). Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
+Signing goes through Mobile Wallet Adapter, so on a Seeker the key stays in Seed Vault; the app never holds a key. Every seal is an explicit approval in the wallet (biometric on Seed Vault). Our own end-to-end tests so far ran on the Android emulator with Phantom and Fake Wallet, not on Seeker hardware. Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
 
 ## License
 
