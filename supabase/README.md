@@ -36,7 +36,7 @@ supabase functions deploy register transcribe upload-url --no-verify-jwt
 | `config.jsonc` | Supabase CLI settings (local ports, services) |
 | `migrations/…_recordings.sql` | `recordings` table, RLS (anyone reads, anon can't write), private `recordings` bucket |
 | `migrations/…_transcript_status_default.sql` | `transcript_status` defaults to `pending` |
-| `migrations/…_bucket_read_and_limits.sql` | 25 MB bucket limit; read with the public key (files are encrypted) |
+| `migrations/…_bucket_read_and_limits.sql` | 25 MB bucket limit; read with the public key, which is safe only because files are to be encrypted on the phone first (encrypted sharing is roadmap; nothing is uploaded yet) |
 | `migrations/…_any_file_type.sql` | Any file type: `mime_type` column, `transcript_status = 'skipped'` |
 | `functions/register` | Reads the tx from devnet, inserts the row only if the PDA's hash/wallet match |
 | `functions/transcribe` | Audio/video only → ElevenLabs Scribe → `transcript`. API key lives only here |
