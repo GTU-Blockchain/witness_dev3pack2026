@@ -1,7 +1,7 @@
 import { Platform } from 'react-native'
 
-// Witness ortak teması. Değerler ekibin UI template'inden (RecordScreen'deki palet).
-// Ekranlar renkleri kendi içinde tanımlamasın, buradan alsın.
+// Witness shared theme. Values come from the team's UI template (the palette in RecordScreen).
+// Screens should take colors from here instead of defining their own.
 export const C = {
   bg: '#0B0F17',
   surface: '#121926',

@@ -1,6 +1,6 @@
-// 4: Hash çapraz testi + CLI doğrulama. Sadece OKUR, zincire yazmaz.
-// Kullanım: node scripts/hash-file.mjs <dosya>      (dosyayı hash'ler, PDA'yı kontrol eder)
-//           node scripts/hash-file.mjs --hash <hex>  (verilen hash'in PDA'sını kontrol eder)
+// 4: Hash cross-check + CLI verification. Only READS; never writes to the chain.
+// Usage: node scripts/hash-file.mjs <file>        (hashes the file, checks its PDA)
+//        node scripts/hash-file.mjs --hash <hex>  (checks the PDA for the given hash)
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { Connection, PublicKey } from '@solana/web3.js'
@@ -13,12 +13,12 @@ const programId = new PublicKey(process.env.NEXT_PUBLIC_WITNESS_PROGRAM_ID || id
 
 const [arg, val] = process.argv.slice(2)
 if (!arg) {
-  console.error('Kullanım: node scripts/hash-file.mjs <dosya> | --hash <hex>')
+  console.error('Usage: node scripts/hash-file.mjs <file> | --hash <hex>')
   process.exit(1)
 }
 const hashHex = arg === '--hash' ? String(val).toLowerCase() : createHash('sha256').update(readFileSync(arg)).digest('hex')
 if (!/^[0-9a-f]{64}$/.test(hashHex)) {
-  console.error('Geçersiz hash')
+  console.error('Invalid hash')
   process.exit(1)
 }
 
@@ -28,7 +28,7 @@ console.log('pda:   ', pda.toBase58())
 
 const info = await new Connection(rpc, 'confirmed').getAccountInfo(pda)
 if (!info) {
-  console.log('result: account NOT found (mühürlenmemiş ya da değiştirilmiş) ❌')
+  console.log('result: account NOT found (never sealed, or modified) ❌')
   process.exitCode = 2
 } else {
   printRecording(new BorshAccountsCoder(idl).decode('Recording', info.data))

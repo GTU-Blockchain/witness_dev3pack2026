@@ -1,8 +1,8 @@
-// 2: Ses dosyasının SHA-256'sı — mühürlemenin temeli.
-// Ortak kural (docs/TECHNICAL.md): "Dosyanın son halinin ham baytlarının
-// SHA-256'sı, küçük harf hex." Dosya asla yeniden kodlanmaz; ham baytlar hash'lenir.
-// Not: expo-crypto + expo-file-system native modül; bunları çağıran bir ekran
-// eklenince dev build'in yeniden alınması (expo run:android) gerekir.
+// 2: The file's SHA-256, the basis of sealing.
+// Shared rule (docs/TECHNICAL.md): "SHA-256 of the raw bytes of the file's final form,
+// lowercase hex." The file is never re-encoded; the raw bytes are hashed.
+// Note: expo-crypto + expo-file-system are native modules; adding a screen that calls them
+// needs a new dev build (expo run:android).
 import * as Crypto from 'expo-crypto'
 import { File } from 'expo-file-system'
 
@@ -15,15 +15,15 @@ function toLowerHex(buffer: ArrayBuffer): string {
   return hex
 }
 
-/** Ham baytların SHA-256'sı, küçük harf hex (64 karakter). */
+/** SHA-256 of raw bytes, lowercase hex (64 characters). */
 export async function sha256HexOfBytes(data: Uint8Array): Promise<string> {
-  // cast: TS lib'in BufferSource generic'i Uint8Array<ArrayBufferLike> ile
-  // uyuşmuyor; native digest runtime'da Uint8Array'i kabul ediyor.
+  // cast: the TS lib's BufferSource generic doesn't match Uint8Array<ArrayBufferLike>;
+  // the native digest accepts a Uint8Array at runtime.
   const digest = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, data as unknown as ArrayBuffer)
   return toLowerHex(digest)
 }
 
-/** Verilen dosya URI'sinin ham baytlarını okuyup SHA-256 hex döner. */
+/** Reads the raw bytes at a file URI and returns their SHA-256 hex. */
 export async function sha256HexOfFile(uri: string): Promise<string> {
   const buffer = await new File(uri).arrayBuffer()
   return sha256HexOfBytes(new Uint8Array(buffer))

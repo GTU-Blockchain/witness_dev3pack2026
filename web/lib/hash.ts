@@ -1,6 +1,6 @@
-// 4: Tarayıcıda SHA-256. Hash kuralı (docs/TECHNICAL.md): dosyanın son halinin
-// ham baytlarının SHA-256'sı, küçük harf hex (64 karakter); zincirde 32 bayt.
-// Dosya yeniden kodlanmaz, hiçbir yere gönderilmez; sadece ham baytlar okunur.
+// 4: SHA-256 in the browser. Hash rule (docs/TECHNICAL.md): SHA-256 of the raw bytes of the file's
+// final form, lowercase hex (64 characters); 32 bytes on chain.
+// The file is never re-encoded or sent anywhere; only the raw bytes are read.
 import { sha256 } from '@noble/hashes/sha2'
 
 const HEX64 = /^[0-9a-f]{64}$/
@@ -15,7 +15,7 @@ export function bytesToHex(bytes: Uint8Array): string {
   return hex
 }
 
-/** 64 karakter küçük harf hex → 32 bayt. Geçersizse hata fırlatır. */
+/** 64 lowercase hex characters → 32 bytes. Throws if invalid. */
 export function hexToBytes(hex: string): Uint8Array {
   if (!isHex64(hex)) throw new Error('Hash must be 64 lowercase hex characters')
   const out = new Uint8Array(32)
@@ -23,21 +23,21 @@ export function hexToBytes(hex: string): Uint8Array {
   return out
 }
 
-/** Ham baytların SHA-256'sı, küçük harf hex. */
+/** SHA-256 of raw bytes, lowercase hex. */
 export async function sha256Hex(data: ArrayBuffer | Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', data)
   return bytesToHex(new Uint8Array(digest))
 }
 
-// Büyük dosyalar (video vb.): file.arrayBuffer() dosyanın tamamını belleğe alır; telefonda
-// yüzlerce MB'lık bir videoda sekme çökebilir. Bu eşiğin üstünde dosya CHUNK_BYTES'lık
-// parçalar halinde okunur ve artımlı SHA-256 (@noble/hashes) ile hash'lenir. Sonuç
-// birebir aynı SHA-256'dır (hash kuralı değişmez); bellekte aynı anda sadece bir parça durur.
-// Ayrıntı: web/README.md → "Büyük dosyalar".
-export const STREAM_THRESHOLD_BYTES = 64 * 1024 * 1024 // 64 MB altı: tek seferde, yerel WebCrypto (hızlı)
-export const CHUNK_BYTES = 8 * 1024 * 1024 // 8 MB parçalar
+// Large files (video etc.): file.arrayBuffer() loads the whole file into memory; on a phone a video
+// of hundreds of MB can crash the tab. Above this threshold the file is read in CHUNK_BYTES chunks
+// and hashed with incremental SHA-256 (@noble/hashes). The result is exactly the same SHA-256 (the
+// hash rule doesn't change); only one chunk is in memory at a time.
+// Details: web/README.md → "Large files".
+export const STREAM_THRESHOLD_BYTES = 64 * 1024 * 1024 // under 64 MB: in one go, native WebCrypto (fast)
+export const CHUNK_BYTES = 8 * 1024 * 1024 // 8 MB chunks
 
-/** Seçilen dosyanın ham baytlarının SHA-256'sı. onProgress: 0–1 arası (sadece parça parça modda). */
+/** SHA-256 of the selected file's raw bytes. onProgress: 0–1 (chunked mode only). */
 export async function sha256HexOfFile(file: File, onProgress?: (fraction: number) => void): Promise<string> {
   if (file.size <= STREAM_THRESHOLD_BYTES) return sha256Hex(await file.arrayBuffer())
 

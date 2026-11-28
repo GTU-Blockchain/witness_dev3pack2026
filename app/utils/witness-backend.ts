@@ -1,20 +1,20 @@
-// Supabase Edge Function'larına bağlantı (sahibi: 5 Backend + kaptan).
-// Sözleşme: supabase/README.md → "register API" ve "transcribe API".
+// Client for the Supabase Edge Functions (owner: Backend + captain).
+// Contract: supabase/README.md → "register API" and "transcribe API".
 //
-// Mühür zincirde olduktan sonra ARKA PLANDA çalışır; kullanıcı hiçbir zaman bunu beklemez.
-// Supabase'e ulaşılamazsa kanıt kaybolmaz (mühür zincirde), sadece transkript gelmez.
+// Runs IN THE BACKGROUND once the seal is on chain; the user never waits for it.
+// If Supabase is unreachable no proof is lost (the seal is on chain); only the transcript doesn't arrive.
 
-// New Architecture (Fabric) açıkken fetch + FormData ile dosya yüklemek "Unsupported
-// FormDataPart implementation" verip istek ağa çıkmadan patlıyor. Bu yüzden transcribe
-// dosyayı expo-file-system'in native multipart upload'ıyla (uploadAsync, legacy API) gönderir.
+// With the New Architecture (Fabric) on, uploading a file with fetch + FormData fails with
+// "Unsupported FormDataPart implementation" before the request leaves the device. So transcribe
+// sends the file with expo-file-system's native multipart upload (uploadAsync, legacy API).
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy'
 
-// Public değerler (.env.example ile aynı); .env varsa oradan gelir.
+// Public values (same as .env.example); taken from .env if present.
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://tckkwwejujtjgzufbecl.supabase.co'
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_SkZJ_A0YUfhA_2v-yev1sw_AsEuKR-f'
 
 const REGISTER_TIMEOUT_MS = 30_000
-const TRANSCRIBE_TIMEOUT_MS = 90_000 // ElevenLabs uzun kayıtlarda zaman alabilir
+const TRANSCRIBE_TIMEOUT_MS = 90_000 // ElevenLabs can take a while on long recordings
 const REGISTER_ATTEMPTS = 4
 
 export class BackendError extends Error {
@@ -25,7 +25,7 @@ export class BackendError extends Error {
   ) {
     super(message)
   }
-  /** Tekrar denemeye değer mi (ağ, RPC gecikmesi, sunucu hatası)? */
+  /** Worth retrying (network, RPC lag, server error)? */
   get retryable(): boolean {
     return this.status === 0 || this.status >= 500 || this.code === 'tx_not_found'
   }
@@ -54,8 +54,8 @@ async function callFunction<T>(name: string, body: BodyInit, timeoutMs: number, 
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-// uploadAsync'in AbortController'ı yok; yükleme süreyi aşarsa promise'i reddet (native
-// yükleme kısa süre devam edebilir, arka plan en-iyi-çaba akışı için sorun değil).
+// uploadAsync has no AbortController; reject the promise if the upload runs too long (the native
+// upload may continue briefly, which is fine for a best-effort background flow).
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
@@ -64,17 +64,17 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export type RegisterInput = {
-  /** 64 karakter küçük harf hex. */
+  /** 64 lowercase hex characters. */
   hash: string
-  /** signAndSendTransactions'ın döndürdüğü imza (base58). */
+  /** The signature returned by signAndSendTransactions (base58). */
   signature: string
-  /** İmzalayan cüzdan (base58). */
+  /** The signing wallet (base58). */
   wallet: string
-  /** Örn. "audio/mp4", "image/jpeg". Ses/video değilse transkript yapılmaz. */
+  /** E.g. "audio/mp4", "image/jpeg". No transcript unless it's audio/video. */
   mimeType?: string
 }
 
-/** Kaydı Supabase'e yazar. Sunucu her şeyi zincirden doğrular. Geçici hatalarda birkaç kez dener. */
+/** Writes the record to Supabase. The server verifies everything on chain. Retries a few times on transient errors. */
 export async function registerRecording(input: RegisterInput): Promise<void> {
   const body = JSON.stringify({
     audio_hash: input.hash,
@@ -88,7 +88,7 @@ export async function registerRecording(input: RegisterInput): Promise<void> {
       return
     } catch (e) {
       if (!(e instanceof BackendError) || !e.retryable || attempt >= REGISTER_ATTEMPTS) throw e
-      await sleep(2_000 * attempt) // işlem RPC'de henüz görünmüyorsa biraz bekle
+      await sleep(2_000 * attempt) // wait a bit in case the RPC doesn't see the transaction yet
     }
   }
 }
@@ -102,9 +102,9 @@ type TranscribeResponse = {
   message?: string
 }
 
-/** Mühürlenen dosyanın aynısını (yeniden kodlanmamış) gönderir, transkripti döner. Sadece ses/video için.
- *  Dosya, server'ın beklediği multipart form ile gider: `file` alanı + `audio_hash` parametresi
- *  (callFunction/fetch değil; New Arch FormData kısıtı için native uploadAsync — bkz. üstteki not). */
+/** Sends the exact sealed file (not re-encoded) and returns its transcript. Audio/video only.
+ *  The file goes as the multipart form the server expects: a `file` field + an `audio_hash` parameter
+ *  (not callFunction/fetch; native uploadAsync because of the New Arch FormData limit, see the note above). */
 export async function transcribeRecording(
   hash: string,
   fileUri: string,
@@ -130,7 +130,7 @@ export async function transcribeRecording(
   try {
     data = JSON.parse(result.body) as TranscribeResponse
   } catch {
-    // boş/HTML gövde: data {} kalır, aşağıda status'a göre hata üretilir
+    // empty/HTML body: data stays {}, and an error is built from the status below
   }
   if (result.status < 200 || result.status >= 300) {
     throw new BackendError(result.status, data.error ?? 'unknown', data.message ?? `HTTP ${result.status}`)

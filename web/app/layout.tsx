@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Gövde metni hemen lazım; ilk boyamada yazı tipi değişimini azaltır (yerel dosya, harici istek yok) */}
+        {/* Body text is needed right away; reduces the font swap on first paint (local file, no external request) */}
         <link rel="preload" href="/fonts/google-sans-flex-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body>{children}</body>

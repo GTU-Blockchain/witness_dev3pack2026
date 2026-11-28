@@ -1,9 +1,9 @@
-//! Witness programı: her ses hash'i için bir kez yazılabilen `Recording` PDA'sı.
-//! Kaynak: docs/TECHNICAL.md → "Solana programı".
-//! Bilerek yok: hesap kapatma, güncelleme, admin anahtarı, attach_transcript.
+//! Witness program: a `Recording` PDA that can be written once per file hash.
+//! Source: docs/TECHNICAL.md → "Solana program".
+//! Deliberately absent: account close, update, admin key, attach_transcript.
 use anchor_lang::prelude::*;
 
-// 3: deploy öncesi `anchor keys sync` ile güncelle.
+// 3: update with `anchor keys sync` before deploying.
 declare_id!("2CyjSQFX9pSJV7uTVG8UwvGxeDuRQyWZrfHMd8FZeeYJ");
 
 pub const RECORDING_SEED: &[u8] = b"rec";
@@ -44,7 +44,7 @@ pub mod witness {
 #[derive(Accounts)]
 #[instruction(audio_hash: [u8; 32])]
 pub struct RegisterRecording<'info> {
-    // `init`: PDA zaten varsa işlem başarısız olur → aynı hash ikinci kez yazılamaz.
+    // `init`: the transaction fails if the PDA already exists → the same hash can't be written twice.
     #[account(
         init,
         payer = authority,
@@ -60,17 +60,17 @@ pub struct RegisterRecording<'info> {
 
 #[account]
 pub struct Recording {
-    pub authority: Pubkey,                     // kaydeden cüzdan
-    pub audio_hash: [u8; 32],                  // dosyanın SHA-256'sı
-    pub recorded_at: i64,                      // telefon saati (beyan)
-    pub anchored_at: i64,                      // zincir saati (asıl kanıt)
+    pub authority: Pubkey,                     // the sealing wallet
+    pub audio_hash: [u8; 32],                  // the file's SHA-256
+    pub recorded_at: i64,                      // phone clock (the signer's claim)
+    pub anchored_at: i64,                      // chain time (the actual proof)
     pub duration_ms: u32,
-    pub location_commitment: Option<[u8; 32]>, // sha256(lat|lon|salt), açık koordinat değil
+    pub location_commitment: Option<[u8; 32]>, // sha256(lat|lon|salt), never plain coordinates
     pub bump: u8,
 }
 
 impl Recording {
-    // 8 (discriminator) + 32 + 32 + 8 + 8 + 4 + 33 + 1 = 126 bayt
+    // 8 (discriminator) + 32 + 32 + 8 + 8 + 4 + 33 + 1 = 126 bytes
     pub const SPACE: usize = 8 + 32 + 32 + 8 + 8 + 4 + (1 + 32) + 1;
 }
 
@@ -84,6 +84,8 @@ pub struct RecordingRegistered {
 
 #[error_code]
 pub enum WitnessError {
+    // "duration_ms cannot be 0". Left as deployed: this string is compiled into the devnet program,
+    // so translating it would make the source differ from the deployed binary.
     #[msg("duration_ms 0 olamaz")]
     InvalidDuration,
 }

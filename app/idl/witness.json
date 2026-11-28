@@ -4,7 +4,7 @@
     "name": "witness",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Witness: ses kaydı hash'ini zincire bir kez yazan program"
+    "description": "Witness: writes a file's hash to the chain exactly once"
   },
   "instructions": [
     {

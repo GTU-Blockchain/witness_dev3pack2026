@@ -2,9 +2,17 @@
 
 [![CI](https://github.com/GTU-Blockchain/witness_dev3pack2026/actions/workflows/ci.yml/badge.svg)](https://github.com/GTU-Blockchain/witness_dev3pack2026/actions/workflows/ci.yml)
 
-**A mobile notary for media. Seal any photo, audio, video or document on Solana and let anyone prove it hasn't changed since.**
+**Witness is a mobile app for people whose photos and recordings get questioned (tenants, journalists, insurance claimants) that seals a file's fingerprint on Solana, so anyone can later prove it hasn't changed.**
 
 **[Pitch deck](docs/Witness_Pitch.pdf)** (PDF, 13 slides) · **[Demo video](https://youtu.be/3xsx3oWeymk)** · **[Live verifier](https://web-pi-cyan-30.vercel.app)** · **[X: @witness_sol](https://x.com/witness_sol)**
+
+## Problem
+
+A tenant films the flat at move-out to show it was left clean and undamaged. Months later the landlord keeps
+the deposit and says the video was edited or recorded later. The tenant has the file, but no simple way to show
+it is the original, untouched recording from that day, so the dispute comes down to whose word is believed.
+
+## What Witness does
 
 Witness takes the raw bytes of a file, computes its SHA‑256 fingerprint, and has the user sign an on‑chain record through Mobile Wallet Adapter (Seed Vault on a Seeker, Phantom elsewhere; the app never holds a key). The file itself never leaves the phone. Later, anyone can drop the same file into a public web page that re‑hashes it in the browser and checks the chain:
 
@@ -161,6 +169,14 @@ Not implemented yet. Each item moves to [Built today](#built-today) only when it
 - [ ] C2PA interop: emit a Content Credentials manifest that carries the Solana anchor
 - [ ] Per-wallet records (v2): no hash squatting. Seeds `["rec", authority, hash]`, so every wallet attests independently and the verifier shows the earliest ([details](#known-limitations-and-planned-fixes))
 
+## Next 3 months
+
+Plans only, not built and not promised dates; nothing here is live yet.
+
+- **Month 1:** per-wallet records (v2, seeds `["rec", authority, hash]`) and a mainnet deploy of the program.
+- **Month 2:** Seeker Genesis Token check, testing on a real Seeker, and a Solana dApp Store submission.
+- **Month 3:** a pilot with one rental or insurance partner, and an SDK alpha.
+
 ## Cost
 
 Each seal creates one `Recording` account of `Recording::SPACE` = **126 bytes**
@@ -204,6 +220,28 @@ the same on mainnet, while priority fees depend on the wallet and network load.
 - **Exact-byte matching.** Re-encoding (e.g. messaging apps compressing a video) changes the hash. The
   original has to be shared as-is.
 
+## Demo notes
+
+What in the app is placeholder, simulated or fixed today, so nothing on screen is mistaken for a feature:
+
+- **Recording meter is decorative.** The bars on the record screen ("LIVE ACOUSTIC SPECTRUM") move while you
+  record, but they are generated, not driven by the microphone. The recorded file itself is real and untouched.
+- **GPS location stamp is "coming soon".** The toggle on the record screen records nothing; every seal so far has
+  `location_commitment = null`, and the app labels it "no location is recorded yet".
+- **"Evidence" wording.** A few app labels say "Evidence" ("Evidence Sealed On-Chain"). A seal proves the file is
+  unaltered since sealing, not that its content is true; a wording fix is planned for the next APK.
+- **Still media get `duration_ms = 1`.** The program requires a duration > 0, so photos and documents are sealed with
+  1 ms. The verifier hides it ([Known limitations](#known-limitations-and-planned-fixes)).
+- **Dev-only test tools.** The `/dev` screen (linked only in development builds) and
+  `app/scripts/register-recording-devnet.mjs` seal random 32-byte test hashes with a fixed 12,345 ms duration, to
+  check the program on devnet.
+- **Built-in defaults.** Without a `.env`, the app and verifier fall back to public devnet values (devnet RPC and the
+  program ID; in the app also the Supabase URL and its publishable key). No secret is hardcoded.
+- **Reserved, unused.** The `upload-url` function, the private Storage bucket, the `has_genesis_token` column and
+  `EXPO_PUBLIC_GENESIS_TOKEN_MINT` exist for roadmap features (encrypted sharing, SGT check); nothing calls them yet.
+- **The example seal is real.** The `/v/9d48bc02…` link and tx `4kJ7…nctm` above are a real devnet seal from the app,
+  not a fixture; the emulator's silent mic explains its flat waveform.
+
 ## Verify it yourself
 
 ```bash
@@ -236,7 +274,7 @@ The phone, the browser, and `shasum -a 256` all produce the **same** lowercase�
 | [`/program`](program) | Anchor program (`register_recording`), tests, IDL |
 | [`/web`](web) | Next.js verification page (`/` and `/v/<hash>` share links), deployed on Vercel |
 | [`/supabase`](supabase) | SQL migrations + Edge Functions (`register`, `transcribe`, `upload-url`) |
-| [`/docs`](docs) | Technical deep‑dive ([`TECHNICAL.md`](docs/TECHNICAL.md)); internal team‑planning notes (Turkish) under [`docs/internal`](docs/internal) |
+| [`/docs`](docs) | Technical deep‑dive ([`TECHNICAL.md`](docs/TECHNICAL.md)) and the [pitch deck](docs/Witness_Pitch.pdf) |
 
 **Tech stack:** React Native / Expo dev build · Mobile Wallet Adapter · `@solana/web3.js` 1.x · Anchor 0.31.x (Rust) · Next.js · Supabase (Postgres + Edge Functions + Storage) · ElevenLabs Scribe.
 
@@ -253,6 +291,12 @@ Each folder's own README has setup steps. Deep dive: [`docs/TECHNICAL.md`](docs/
 ## Why Solana Mobile
 
 Signing goes through Mobile Wallet Adapter, so on a Seeker the key stays in Seed Vault; the app never holds a key. Every seal is an explicit approval in the wallet (biometric on Seed Vault). Our own end-to-end tests so far ran on the Android emulator with Phantom and Fake Wallet, not on Seeker hardware. Mobile Wallet Adapter makes third‑party in‑app signing possible, fees are negligible on devnet, and **anyone** can verify permissionlessly from a browser — no account, no gatekeeper.
+
+## Timeline
+
+Built for Dev3pack 2026. Work started on 2026-11-25 (the repository's first commit) during the Dev3pack bootcamp
+period, when the organizers opened building; the project was not live before the hackathon. Everything in this
+repo was written for Dev3pack.
 
 ## License
 

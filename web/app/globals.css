@@ -1,11 +1,11 @@
-/* 4: Witness doğrulama sayfası stilleri. Renkler token üzerinden.
-   RENKLER: Witness ortak teması — app/constants/theme.ts (C) ile birebir aynı değerler. Uygulama
-   ile doğrulama sayfası aynı görünsün diye web kendi paletini tanımlamaz; theme.ts değişirse
-   aşağıdaki :root bloğu da güncellenmeli (web/README.md → Tema). Ortak tema sadece koyu.
-   Köşe yarıçapları ve yazı tipleri Gemini tasarım maketinden (ortak temada karşılıkları yok). */
+/* 4: Witness verification page styles. Colors go through tokens.
+   COLORS: the Witness shared theme, exactly the same values as app/constants/theme.ts (C). The web
+   doesn't define its own palette, so the app and the verification page look the same; if theme.ts
+   changes, the :root block below must change too (web/README.md → Theme). The shared theme is dark only.
+   Corner radii and fonts come from the Gemini design mockup (the shared theme has no equivalents). */
 
-/* Yazı tipleri yerelden sunulur (web/public/fonts, SIL OFL 1.1). Sayfa harici bir
-   yazı tipi sunucusuna istek atmaz. Türkçe karakterler (ğ, ş, İ, ı) latin-ext'te. */
+/* Fonts are served locally (web/public/fonts, SIL OFL 1.1). The page makes no requests to an
+   external font server. Turkish characters are in the latin-ext subset. */
 @font-face {
   font-family: 'Google Sans Flex';
   font-style: normal;
@@ -48,8 +48,8 @@
   --muted: #CBD5E1;            /* C.textSoft */
   --faint: #94A3B8;            /* C.muted */
   --border: #1E293B;           /* C.border */
-  --border-strong: color-mix(in srgb, #94A3B8 35%, transparent); /* C.muted, %35 (temada daha güçlü çizgi yok) */
-  --accent: #34D399;           /* C.emerald: bağlantı, odak, sürükleme vurgusu */
+  --border-strong: color-mix(in srgb, #94A3B8 35%, transparent); /* C.muted at 35% (the theme has no stronger line) */
+  --accent: #34D399;           /* C.emerald: links, focus, drag highlight */
   --btn-bg: #34D399;           /* C.emerald: birincil buton (uygulamadaki gibi) */
   --btn-ink: #0B1F14;          /* C.onEmerald */
   --ok-ink: #34D399;           /* C.emerald */
@@ -59,7 +59,7 @@
   --bad-bg: rgba(229, 83, 75, 0.12);  /* C.redSoft */
   --bad-border: color-mix(in srgb, #E5534B 40%, transparent);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .4);
-  /* Köşe yarıçapları (Gemini shape ölçeği) */
+  /* Corner radii (Gemini shape scale) */
   --r-l: 24px;
   --r-m: 16px;
   --r-s: 8px;
@@ -95,7 +95,7 @@ header p { margin: 12px 0 0; color: var(--muted); font-size: 14.5px; }
 }
 
 .drop {
-  display: block; /* <label> varsayılanı inline: çerçeve/köşe bozuk çiziliyordu */
+  display: block; /* <label> defaults to inline, which drew the border/corners wrong */
   margin: 6px; padding: 30px 20px; border-radius: calc(var(--r-l) - 6px);
   border: 1.5px dashed var(--border-strong);
   text-align: center; cursor: pointer; transition: border-color .15s, background .15s;

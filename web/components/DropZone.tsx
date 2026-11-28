@@ -1,5 +1,5 @@
 'use client'
-// 4: Sürükle bırak alanı. Dosya sadece tarayıcıda okunur; hiçbir yere yüklenmez.
+// 4: Drag-and-drop area. The file is only read in the browser; it is never uploaded anywhere.
 import { useRef, useState } from 'react'
 
 export function DropZone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {

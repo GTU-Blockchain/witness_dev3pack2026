@@ -1,12 +1,12 @@
 'use client'
-// 4: Ses dosyasının GERÇEK dalga formu (Web Audio ile çizilir). Sadece görsel bağlam —
-// ✅/❌ kararı dalga formundan değil, hash eşleşmesinden gelir. Sahte "kesinti" göstergesi yok.
+// 4: The audio file's REAL waveform (drawn with Web Audio). Visual context only: the ✅/❌
+// verdict comes from the hash match, not the waveform. No fake "cut" markers.
 import { useEffect, useRef, useState } from 'react'
 
 const BUCKETS = 52
-// Ses çözme dosyanın tamamını belleğe alır (ve çözülmüş PCM bundan da büyüktür). Hash parça parça
-// hesaplansa bile dalga formu büyük dosyada sekmeyi çökertebilir; bu yüzden üstünde çizilmez.
-// Doğrulama sonucunu etkilemez (✅/❌ hash'ten gelir). Bkz. web/README.md → Büyük dosyalar.
+// Decoding audio loads the whole file into memory (and the decoded PCM is even larger). Even with
+// chunked hashing, a waveform could crash the tab on a big file, so above this size it isn't drawn.
+// It doesn't affect the verdict (✅/❌ comes from the hash). See web/README.md → Large files.
 const MAX_WAVEFORM_BYTES = 64 * 1024 * 1024
 
 function fmtDur(sec: number): string {
@@ -15,7 +15,7 @@ function fmtDur(sec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-/** Ses baytlarını çöz, kova başına tepe genliği çıkar (0–1). */
+/** Decode the audio bytes and take the peak amplitude per bucket (0–1). */
 async function peaksFromFile(file: File): Promise<{ peaks: number[]; dur: string }> {
   const AC: typeof AudioContext =
     window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
@@ -68,8 +68,8 @@ function draw(canvas: HTMLCanvasElement, peaks: number[], color: string) {
   }
 }
 
-/** Sadece ses dosyaları için dalga formu gösterir; çözülemezse hiçbir şey çizmez.
- *  colorVar: temaya göre çözülen CSS değişkeni adı (ör. "--ok-ink"). */
+/** Shows a waveform for audio files only; draws nothing if decoding fails.
+ *  colorVar: name of a CSS variable resolved from the theme (e.g. "--ok-ink"). */
 export function WaveForm({ file, colorVar }: { file: File; colorVar: string }) {
   const [state, setState] = useState<{ peaks: number[]; dur: string } | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)

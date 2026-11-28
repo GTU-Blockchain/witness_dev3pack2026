@@ -19,19 +19,19 @@ export function AccountFeatureIndex() {
 
   return (
     <View style={appStyles.stack}>
-      {/* Katman 1: başka bir uygulamadan paylaşılan dosya geldiyse en üstte mühürleme. */}
+      {/* Layer 1: if a file was shared from another app, sealing comes first. */}
       {sharedFile ? (
         <View style={appStyles.stack}>
-          <Text style={appStyles.title}>Paylaşılan dosyayı mühürle</Text>
+          <Text style={appStyles.title}>Seal the shared file</Text>
           {account ? (
             <AccountFeatureSealShared address={account.address} file={sharedFile} />
           ) : (
             <View style={appStyles.stack}>
-              <Text>Mühürlemek için önce cüzdanı bağla.</Text>
+              <Text>Connect a wallet first to seal.</Text>
               <AccountFeatureConnect />
             </View>
           )}
-          <Button title="Vazgeç" onPress={() => resetShareIntent()} />
+          <Button title="Cancel" onPress={() => resetShareIntent()} />
         </View>
       ) : null}
 

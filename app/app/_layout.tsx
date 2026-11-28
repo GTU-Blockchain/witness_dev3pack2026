@@ -17,9 +17,9 @@ export default function RootLayout() {
           <Stack.Screen name="recordings" options={{ headerShown: false }} />
           <Stack.Screen name="dev" options={{ headerShown: false }} />
         </Stack>
-        {/* Rol 6: paylaşılan medyayı yakalayıp /seal'e yönlendirir (görünmez) */}
+        {/* Role 6: catches shared media and routes it to /seal (renders nothing) */}
         <ShareIntentHandler />
-        {/* Koyu temada saat / pil / wi-fi ikonları açık renk olsun */}
+        {/* Light clock / battery / wi-fi icons on the dark theme */}
         <StatusBar style="light" />
       </AppProviders>
     </ShareIntentProvider>

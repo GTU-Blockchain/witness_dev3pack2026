@@ -4,10 +4,9 @@ import { AppActionButton } from '@/components/app-action-button'
 import { buildRegisterRecordingIx, fetchRecording } from '@/utils/witness-program'
 import { ellipsify } from '@/utils/ellipsify'
 
-// Demo: gerçek akışta audio_hash dosyanın SHA-256'sı olacak (utils/witness-hash.ts,
-// expo-crypto — dev build rebuild'i ister). Burada her denemede yeni bir PDA açmak
-// için 32 rastgele bayt kullanılıyor; amaç register_recording'in zincirde çalıştığını
-// göstermek (PDA açılır + anchored_at zincir saatinden).
+// Dev-only test (the /dev page, __DEV__ builds): in the real flow audio_hash is the file's SHA-256
+// (utils/witness-hash.ts). Here 32 random bytes are used so every try opens a new PDA; the point is
+// to show that register_recording works on chain (PDA created + anchored_at from chain time).
 function demoHash(): Uint8Array {
   const bytes = new Uint8Array(32)
   for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
@@ -20,8 +19,8 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
   return (
     <AppActionButton
       onPress={async () => {
-        // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de);
-        // web3 payerKey gerçek PublicKey ister.
+        // account.address can be a base58 string at runtime (even though the type says PublicKey);
+        // web3's payerKey needs a real PublicKey.
         const payer = address instanceof PublicKey ? address : new PublicKey(address as unknown as string)
 
         const {
@@ -46,8 +45,8 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
         const signature = await signAndSendTransactions(new VersionedTransaction(message), minContextSlot)
         await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed')
 
-        // PDA'yı okumak best-effort: imza başarılıysa akış başarılıdır, okuma
-        // hatası başarıyı bozmaz.
+        // Reading the PDA is best-effort: if the signature went through the flow succeeded, and a
+        // read error doesn't undo that.
         let anchoredAt: string | undefined
         try {
           const rec = await fetchRecording(connection, pda)
@@ -55,7 +54,7 @@ export function AccountFeatureRegisterRecording({ address }: { address: PublicKe
         } catch {}
 
         return {
-          description: `PDA ${ellipsify(pda.toString(), 6)} açıldı${anchoredAt ? ` · anchored_at ${anchoredAt}` : ''} · sig ${signature}`,
+          description: `PDA ${ellipsify(pda.toString(), 6)} created${anchoredAt ? ` · anchored_at ${anchoredAt}` : ''} · sig ${signature}`,
           status: 'success',
           title: 'Register recording',
         } as const

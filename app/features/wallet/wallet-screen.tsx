@@ -9,7 +9,7 @@ import { DevnetSolCard, useDevnetSol } from '@/features/wallet/devnet-sol'
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
 
-// ---- Saf görünüm: sadece props alır, cüzdan bilmez. Mock ile denenebilir. ----
+// ---- Pure view: takes props only, knows nothing about the wallet. Can be tried with mock props. ----
 type WalletViewProps = {
   address: string | null
   balanceSol: number | null
@@ -111,12 +111,12 @@ function SecondaryButton({ title, onPress }: { title: string; onPress: () => voi
   )
 }
 
-// ---- Bağlıyken bakiyeyi okuyan parça (hook'u koşullu çağıramayız, o yüzden ayrı) ----
+// ---- The part that reads the balance while connected (a hook can't be called conditionally, hence separate) ----
 // A fresh (e.g. a judge's) wallet has 0 SOL and can't pay for a seal: keep it here with a
 // "Get devnet SOL" button. A funded wallet goes straight on to recording, as before.
 function ConnectedWallet({ address, networkLabel }: { address: PublicKey; networkLabel: string }) {
-  // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de);
-  // getBalance PublicKey beklediği için normalize et (bkz. account-feature-seal-shared.tsx).
+  // account.address can be a base58 string at runtime (even though the type says PublicKey);
+  // getBalance expects a PublicKey, so normalize it (see account-feature-seal-shared.tsx).
   const publicKey = address instanceof PublicKey ? address : new PublicKey(address as unknown as string)
   const devnet = useDevnetSol(publicKey)
   const balanceSol = devnet.lamports !== null ? devnet.lamports / LAMPORTS_PER_SOL : null
@@ -144,7 +144,7 @@ function ConnectedWallet({ address, networkLabel }: { address: PublicKey; networ
   )
 }
 
-// ---- Dışarıya açılan ekran ----
+// ---- The exported screen ----
 export function WalletScreen() {
   const { account, connect, chain } = useMobileWallet()
   const [error, setError] = useState<string | null>(null)
@@ -179,7 +179,7 @@ export function WalletScreen() {
   return <ConnectedWallet address={account.address} networkLabel={networkLabel} />
 }
 
-// Stiller RecordScreen ile aynı ölçüler (ortak tema: constants/theme.ts)
+// Styles use the same sizes as RecordScreen (shared theme: constants/theme.ts)
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 16 },
   body: { flex: 1, gap: 16 },

@@ -8,8 +8,8 @@ import { addRecording, addSharedRecording } from '@/features/record/recordings-s
 
 const shortAddress = (a: string) => `${a.slice(0, 4)}...${a.slice(-4)}`
 
-// Kayıt ekranı sadece cüzdan bağlıyken açılır.
-// Akış: kaydet → durdur → Seal → kayıt listeye "pending" eklenir → /seal ekranı.
+// The record screen only opens with a connected wallet.
+// Flow: record → stop → Seal → the recording is added to the list as "pending" → /seal screen.
 export default function RecordRoute() {
   const { account } = useMobileWallet()
   const rec = useRecorder()
@@ -25,8 +25,8 @@ export default function RecordRoute() {
     router.push({ pathname: '/seal', params: { id: item.id } })
   }
 
-  // Herhangi bir medya dosyasını seç → paylaşımla aynı kanıtlanmış hat (kopyala → /seal).
-  // Süre picker'dan gelmez (0); /seal zincirde `Math.max(1, …)` uyguladığı için sorun olmaz.
+  // Pick any media file → the same proven pipeline as sharing (copy → /seal).
+  // The picker gives no duration (0); that's fine because /seal applies `Math.max(1, …)` on chain.
   async function pickFile() {
     try {
       const res = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true })

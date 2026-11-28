@@ -5,9 +5,9 @@ import { MobileWalletProvider } from '@wallet-ui/react-native-web3js'
 import { useNetwork } from '@/features/network/use-network'
 import { AppConfig } from '@/constants/app-config'
 
-// MWA dApp identity: `uri`, Android App Links ile doğrulanan domain olmalı
-// (web-pi-cyan-30.vercel.app/.well-known/assetlinks.json). Phantom bu uri'yi
-// doğrulayamazsa imzayı reddeder, bu yüzden name + uri birlikte gönderiliyor.
+// MWA dApp identity: `uri` must be the domain verified through Android App Links
+// (web-pi-cyan-30.vercel.app/.well-known/assetlinks.json). Phantom refuses to sign if it
+// can't verify this uri, so name + uri are sent together.
 const identity = { name: AppConfig.name, uri: AppConfig.uri }
 const queryClient = new QueryClient()
 export function AppProviders({ children }: PropsWithChildren) {

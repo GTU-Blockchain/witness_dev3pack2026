@@ -1,22 +1,24 @@
-// Edge Function: upload-url  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TECHNICAL.md → "Supabase" → Storage / Edge Function'lar, "Paylaşım için uçtan uca şifreleme"
+// Edge Function: upload-url  (owner: Backend + captain)
+// Contract: docs/TECHNICAL.md → "Supabase" → Storage / Edge Functions, and "Hash, signature & encryption"
+// Status: deployed, but no client calls it yet (encrypted sharing is on the roadmap).
 //
-// Girdi:  POST { audio_hash, signature }
-//         signature: kaydı register eden cüzdanın `witness-upload:<audio_hash>` mesajına attığı ed25519 imzası
-//         (MWA `signMessages`). base64 ya da base58; 64 baytlık imza ya da imzayı içeren signed payload olabilir.
-// Çıktı:  200 { path, token, expires_in }
+// Input:  POST { audio_hash, signature }
+//         signature: the ed25519 signature, by the wallet that registered the record, over the message
+//         `witness-upload:<audio_hash>` (MWA `signMessages`). base64 or base58; either the 64-byte signature
+//         or a signed payload that contains it.
+// Output: 200 { path, token, expires_in }
 //
-// Kullanıcı "Paylaş" dediğinde uygulama dosyayı telefonda AES-256-GCM ile şifreler, bu fonksiyondan
-// tek seferlik bir yükleme izni alır ve şifreli dosyayı `<audio_hash>.m4a.enc` yoluna yükler:
+// Planned flow: when the user taps "Share", the app encrypts the file on the phone with AES-256-GCM, gets a
+// one-time upload permit from this function and uploads the encrypted file to `<audio_hash>.m4a.enc`:
 //   supabase.storage.from("recordings").uploadToSignedUrl(path, token, encryptedBytes)
 //
-// Kontroller:
-//   1. Kayıt register edilmiş (zincirde doğrulanmış bir satır var)
-//   2. İsteği kaydın sahibi yapıyor (imza, satırdaki cüzdanla doğrulanır). Böylece başkası, sahibinden önce
-//      kayda çöp dosya yükleyip paylaşımı kilitleyemez.
-//   3. Bu kayıt için henüz dosya yüklenmemiş. Yüklenen dosyanın üzerine yazılamaz (upsert yok).
-// Sunucu dosyanın içeriğini doğrulayamaz (şifreli, anahtar sadece #k= kısmında). Bütünlüğü doğrulama
-// sayfası sağlar: çözer, hash'ler, zincirle karşılaştırır. Yanlış dosya yüklenirse sonuç ❌ olur.
+// Checks:
+//   1. The record is registered (there is a row verified on chain)
+//   2. The request comes from the record's owner (the signature is checked against the row's wallet), so
+//      nobody else can upload a junk file before the owner and lock the share.
+//   3. No file has been uploaded for this record yet. An uploaded file can't be overwritten (no upsert).
+// The server can't check the file's contents (encrypted; the key is only in the #k= part). The verification
+// page provides integrity: it decrypts, hashes and compares with the chain. A wrong file gives ❌.
 
 import { PublicKey } from "npm:@solana/web3.js@1.98.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -25,7 +27,7 @@ import nacl from "npm:tweetnacl@1.0.3";
 
 const BUCKET = "recordings";
 const HEX64 = /^[0-9a-f]{64}$/;
-const SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60; // Supabase imzalı yükleme linkleri 2 saat geçerli
+const SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60; // Supabase signed upload links are valid for 2 hours
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -53,8 +55,8 @@ function decodeBase58(s: string): Uint8Array | null {
   }
 }
 
-// Cüzdanlar imzayı farklı biçimlerde döndürebiliyor: sadece 64 bayt imza, ya da mesaj + imza
-// (imza başta veya sonda). Her olası 64 baytlık adayı dener.
+// Wallets return the signature in different shapes: just the 64-byte signature, or message + signature
+// (signature first or last). Tries every possible 64-byte candidate.
 function verifyOwnerSignature(signature: string, message: Uint8Array, wallet: Uint8Array): boolean {
   for (const bytes of [decodeBase64(signature), decodeBase58(signature)]) {
     if (!bytes) continue;
@@ -83,20 +85,20 @@ function fail(status: number, error: string, message: string): Response {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return fail(405, "method_not_allowed", "Sadece POST");
+  if (req.method !== "POST") return fail(405, "method_not_allowed", "POST only");
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return fail(400, "bad_json", "Gövde JSON olmalı");
+    return fail(400, "bad_json", "Body must be JSON");
   }
   const audioHash = String(body?.audio_hash ?? "").toLowerCase();
-  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash 64 karakter hex olmalı");
+  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash must be 64 hex characters");
 
   const signature = String(body?.signature ?? "").trim();
   if (signature === "" || signature.length > 512) {
-    return fail(400, "bad_signature", "signature gerekli: cüzdanın `witness-upload:<audio_hash>` mesajına imzası");
+    return fail(400, "bad_signature", "signature required: the wallet's signature over `witness-upload:<audio_hash>`");
   }
 
   const path = `${audioHash}.m4a.enc`;
@@ -106,42 +108,42 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // --- 1. Kayıt register edilmiş mi? ---
+  // --- 1. Is the record registered? ---
   const { data: row, error: selectError } = await supabase
     .from("recordings")
     .select("audio_hash, wallet")
     .eq("audio_hash", audioHash)
     .maybeSingle();
   if (selectError) return fail(500, "db_error", selectError.message);
-  if (!row) return fail(404, "not_registered", "Bu hash register edilmemiş; önce register çağrılmalı");
+  if (!row) return fail(404, "not_registered", "This hash is not registered; call register first");
 
-  // --- 2. İsteği kaydın sahibi mi yapıyor? ---
+  // --- 2. Does the request come from the record's owner? ---
   let walletBytes: Uint8Array;
   try {
     walletBytes = new PublicKey(row.wallet).toBytes();
   } catch {
-    return fail(500, "db_error", "Kayıttaki cüzdan adresi okunamadı");
+    return fail(500, "db_error", "Could not read the wallet address in the record");
   }
   if (!verifyOwnerSignature(signature, signMessageFor(audioHash), walletBytes)) {
-    return fail(403, "not_owner", "İmza bu kaydı register eden cüzdana ait değil");
+    return fail(403, "not_owner", "The signature is not from the wallet that registered this record");
   }
 
-  // --- 3. Dosya zaten yüklenmiş mi? ---
+  // --- 3. Was a file already uploaded? ---
   const { data: existing, error: listError } = await supabase.storage
     .from(BUCKET)
     .list("", { search: path, limit: 1 });
   if (listError) return fail(500, "storage_error", listError.message);
   if (existing?.some((o) => o.name === path)) {
-    return fail(409, "already_uploaded", "Bu kayıt için dosya zaten yüklenmiş; üzerine yazılamaz");
+    return fail(409, "already_uploaded", "A file was already uploaded for this record; it can't be overwritten");
   }
 
-  // --- 4. Tek seferlik yükleme izni ---
+  // --- 4. One-time upload permit ---
   const { data: signed, error: signError } = await supabase.storage
     .from(BUCKET)
     .createSignedUploadUrl(path);
-  if (signError || !signed) return fail(500, "storage_error", signError?.message ?? "İmzalı link oluşturulamadı");
+  if (signError || !signed) return fail(500, "storage_error", signError?.message ?? "Could not create the signed link");
 
-  // Paylaşım beklenen yolu satıra yaz (doğrulama sayfası buradan bulur)
+  // Store the expected share path in the row (the verification page looks it up here)
   const { error: updateError } = await supabase
     .from("recordings")
     .update({ storage_path: path, is_encrypted: true })

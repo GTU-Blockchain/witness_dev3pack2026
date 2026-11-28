@@ -1,6 +1,6 @@
 'use client'
-// 4: Sonuç kartı — büyük ✅/❌, ses dosyalarında dalga formu, "en geç şu tarihte vardı".
-// Teknik alanlar (hash, cüzdan, tx, PDA…) "Detaylar" pop-up'ında (DetailsModal).
+// 4: Result card: a big ✅/❌, a waveform for audio files, "existed no later than".
+// Technical fields (hash, wallet, tx, PDA…) are in the "Details" pop-up (DetailsModal).
 import { useEffect, useRef, useState } from 'react'
 import type { LookupResult } from '@/lib/recording'
 import { findSealSignature } from '@/lib/recording'

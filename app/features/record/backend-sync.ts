@@ -1,16 +1,16 @@
 import { getRecording, updateRecording } from '@/features/record/recordings-store'
 import { isTranscribable, registerRecording, transcribeRecording } from '@/utils/witness-backend'
 
-// Mühürlenmiş bir kaydı Supabase'e yazar, sonra transkriptini alır (sahibi: 5 Backend + kaptan).
-// Mühürleme akışını hiç bekletmez: çağıran `void syncRecordingToBackend(id)` der ve devam eder.
-// Hata olursa sessizce kalır; kayıt ekranı tekrar açıldığında yeniden denenir. Kanıt zincirde, kaybolmaz.
+// Writes a sealed recording to Supabase, then fetches its transcript (owner: Backend + captain).
+// Never blocks sealing: the caller does `void syncRecordingToBackend(id)` and moves on.
+// Fails quietly and is retried the next time the screen opens. The proof is on chain and can't be lost.
 
-// Uygulama içi kayıtlar her zaman m4a (AAC); paylaşılan dosyalarda (Rol 6) kaydın mimeType'ı kullanılır.
+// In-app recordings are always m4a (AAC); shared files (Role 6) use the recording's mimeType.
 const DEFAULT_MIME = 'audio/mp4'
 
 const inFlight = new Set<string>()
 
-/** Mühürlenmiş ama Supabase'e yazılmamış ya da transkripti alınmamış kayıt mı? */
+/** Sealed, but not yet written to Supabase or still missing its transcript? */
 export function needsBackendSync(id: string): boolean {
   const rec = getRecording(id)
   if (!rec || rec.status !== 'sealed' || !rec.hash || !rec.signature || !rec.wallet) return false
@@ -44,12 +44,12 @@ export async function syncRecordingToBackend(id: string): Promise<void> {
       const { transcript, lang } = await transcribeRecording(rec.hash!, rec.uri, mime)
       updateRecording(id, { transcript: transcript ?? undefined, transcriptLang: lang, transcriptStatus: 'done' })
     } catch (e) {
-      // 'failed': ekranda "transkript yok" görünür; bir sonraki açılışta tekrar denenmez (ElevenLabs ücreti).
+      // 'failed': the screen shows "no transcript"; not retried on the next open (ElevenLabs costs money).
       updateRecording(id, { transcriptStatus: 'failed' })
       console.warn('[witness] transcribe failed', e)
     }
   } catch (e) {
-    // register başarısız (ağ vs.): backendSynced false kalır, bir sonraki açılışta tekrar denenir.
+    // register failed (network etc.): backendSynced stays false and it's retried on the next open.
     console.warn('[witness] register failed', e)
   } finally {
     inFlight.delete(id)

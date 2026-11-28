@@ -1,5 +1,5 @@
-// 4: Recording PDA'sını türetir, okur, çözer. ✅/❌ kararı SADECE zincirdeki bu hesaba dayanır.
-// Kurallar: PDA seed'leri ["rec", hash32] (docs/TECHNICAL.md → Solana programı / Okuma tarafı).
+// 4: Derives, reads and decodes the Recording PDA. The ✅/❌ verdict rests ONLY on this on-chain account.
+// Rules: PDA seeds ["rec", hash32] (docs/TECHNICAL.md → "Solana program").
 import { BorshAccountsCoder } from '@coral-xyz/anchor'
 import { Connection, PublicKey } from '@solana/web3.js'
 import idl from '@/idl/witness.json'
@@ -12,11 +12,11 @@ const coder = new BorshAccountsCoder(idl as any)
 export interface RecordingInfo {
   pda: string
   authority: string
-  audioHash: string // küçük harf hex
-  recordedAt: number // telefon saati (beyan), unix sn
-  anchoredAt: number // zincir saati (asıl kanıt), unix sn
+  audioHash: string // lowercase hex
+  recordedAt: number // phone clock (the signer's claim), unix seconds
+  anchoredAt: number // chain time (the actual proof), unix seconds
   durationMs: number
-  hasLocationCommitment: boolean // açık koordinat yok, sadece commitment var/yok
+  hasLocationCommitment: boolean // no plain coordinates, only whether a commitment exists
 }
 
 export type LookupResult =
@@ -39,7 +39,7 @@ function toNum(v: { toString(): string } | number): number {
   return typeof v === 'number' ? v : Number(v.toString())
 }
 
-/** Hash'e ait Recording hesabını zincirden okur. */
+/** Reads the Recording account for a hash from the chain. */
 export async function lookupRecording(hashHex: string): Promise<LookupResult> {
   const pda = recordingPda(hashHex)
   const info = await getConnection().getAccountInfo(pda, 'confirmed')
@@ -74,7 +74,7 @@ export async function lookupRecording(hashHex: string): Promise<LookupResult> {
   }
 }
 
-/** PDA'yı açan (mühürleme) işlemin imzası: hesabın en eski imzası. PDA tx imzasını saklamaz. */
+/** Signature of the transaction that created the PDA (the seal): the account's oldest signature. The PDA doesn't store it. */
 export async function findSealSignature(pda: string): Promise<string | null> {
   const sigs = await getConnection().getSignaturesForAddress(new PublicKey(pda), { limit: 1000 }, 'confirmed')
   return sigs.length ? sigs[sigs.length - 1].signature : null

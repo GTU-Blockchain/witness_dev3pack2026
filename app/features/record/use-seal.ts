@@ -14,8 +14,8 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes
 }
 
-// Mobile Wallet Adapter protokolünün hata kodları → kullanıcıya gösterilecek mesaj.
-// Kod ya hata nesnesinin `code` alanında ya da mesajın başında ("-1/...") gelir.
+// Mobile Wallet Adapter protocol error codes → the message shown to the user.
+// The code comes either in the error object's `code` field or at the start of the message ("-1/...").
 const WALLET_ERRORS: Record<number, string> = {
   [-1]: "The wallet couldn't confirm this app's access. Please reconnect your wallet and try again.",
   [-2]: "The wallet couldn't read the transaction. Please try again.",
@@ -46,9 +46,9 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * Bir kaydın mühürleme akışı (docs/TECHNICAL.md → "Bir kaydın mühürlenme sırası"):
- * dosyanın SHA-256'sı → cüzdan onayı (MWA) → register_recording → onay.
- * Hata olursa kayıt silinmez, "pending" kalır ve tekrar denenebilir.
+ * The sealing flow for one recording (docs/TECHNICAL.md → "Wallet integration (Mobile Wallet Adapter)"):
+ * the file's SHA-256 → wallet approval (MWA) → register_recording → confirmation.
+ * On error the recording isn't deleted; it stays "pending" and can be retried.
  */
 export function useSeal(id: string) {
   const { account, chain, connection, signAndSendTransactions } = useMobileWallet()
@@ -59,10 +59,10 @@ export function useSeal(id: string) {
   )
   const [error, setError] = useState<string | undefined>()
   const [hash, setHash] = useState(initial?.hash)
-  // Her "Try Again"de artar; ekran bununla sıfırdan çizilir (onay butonunun iç durumu temizlensin).
+  // Increments on every "Try Again"; the screen re-renders from scratch with it (clears the approve button's state).
   const [attempt, setAttempt] = useState(0)
 
-  // Dosyanın SHA-256'sını hesaplar; state'i sadece sonuç gelince değiştirir.
+  // Computes the file's SHA-256; only changes state once the result is in.
   function computeHash() {
     const rec = getRecording(id)
     if (!rec) return
@@ -76,10 +76,10 @@ export function useSeal(id: string) {
     )
   }
 
-  // Ekran açılınca hash'i hesapla (daha önce hesaplanmadıysa). Sadece ilk açılışta.
+  // Compute the hash when the screen opens (unless already computed). First open only.
   useEffect(() => {
     if (!initial?.hash && initial?.status !== 'sealed') computeHash()
-    // Daha önce mühürlenmiş ama Supabase'e yazılamamış / transkripti gelmemiş kayıt: arka planda tekrar dene.
+    // Sealed earlier but not written to Supabase / no transcript yet: retry in the background.
     if (initial?.status === 'sealed') void syncRecordingToBackend(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -92,7 +92,7 @@ export function useSeal(id: string) {
       // account.address runtime'da base58 string gelebiliyor (tip PublicKey dese de).
       const payer = account.address instanceof PublicKey ? account.address : new PublicKey(String(account.address))
 
-      // Ücret + kayıt hesabının kirası için devnet SOL gerekir; yoksa cüzdan sessizce zaman aşımına düşüyor.
+      // The fee + the record account's rent need devnet SOL; without it the wallet silently times out.
       const balance = await connection.getBalance(payer)
       if (balance < MIN_BALANCE_LAMPORTS) {
         throw new Error('Not enough devnet SOL in your wallet to pay for the seal. Get some below, then try again.')
@@ -130,7 +130,7 @@ export function useSeal(id: string) {
         explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=${cluster}`,
       })
       setStep('sealed')
-      // Supabase'e kayıt + transkript: arka planda, mühürlemeyi bekletmez.
+      // Supabase register + transcript: in the background, never blocks sealing.
       void syncRecordingToBackend(id)
     } catch (e) {
       setError(errorMessage(e))
@@ -149,7 +149,7 @@ export function useSeal(id: string) {
     }
   }
 
-  // Store'a abone ol: transkript arka planda gelince ekran güncellensin.
+  // Subscribe to the store so the screen updates when the transcript arrives in the background.
   const rec = useRecordings().find((r) => r.id === id)
   return {
     step,
