@@ -298,6 +298,16 @@ Built for Dev3pack 2026. Work started on 2026-11-25 (the repository's first comm
 period, when the organizers opened building; the project was not live before the hackathon. Everything in this
 repo was written for Dev3pack.
 
+## Team
+
+Built by GTU Blockchain at Dev3pack 2026.
+
+- Arda Ceylan: team lead, Solana program and wallet integration, across the stack
+- Büşra Uflaz: mobile app UI
+- Nazan Ertekin: mobile app UI
+- Kerem Akyol: web verifier
+- Uğur Karaca: backend (Supabase, ElevenLabs)
+
 ## License
 
 [MIT](LICENSE). The app scaffold under [`/app`](app) comes from the Solana Mobile Expo template and keeps its original [Apache 2.0 license](app/LICENSE).
