@@ -1,5 +1,5 @@
 'use client'
-// 4: "/" doğrulama akışı: dosya → tarayıcıda SHA-256 → PDA → getAccountInfo → ✅/❌.
+// 4: The "/" verification flow: file → SHA-256 in the browser → PDA → getAccountInfo → ✅/❌.
 import { useState } from 'react'
 import { DropZone } from './DropZone'
 import { ResultCard } from './ResultCard'
@@ -19,7 +19,7 @@ export function Verifier() {
     const fileName = file.name
     setState({ phase: 'working', fileName, step: 'Computing fingerprint…' })
     try {
-      // Büyük dosyada parça parça hash'lenir; ilerleme yüzde olarak gösterilir (web/README.md → Büyük dosyalar)
+      // A large file is hashed in chunks; progress is shown as a percentage (web/README.md → Large files)
       let lastPct = -1
       const hash = await sha256HexOfFile(file, (f) => {
         const pct = Math.floor(f * 100)

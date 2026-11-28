@@ -4,17 +4,17 @@ import { useShareIntentContext } from 'expo-share-intent'
 import { useMobileWallet } from '@wallet-ui/react-native-web3js'
 import { addSharedRecording } from '@/features/record/recordings-store'
 
-// Rol 6 — "Paylaş → Witness ile mühürle".
-// Başka uygulamadan (galeri, kamera, ses kaydedici, dosya) paylaşılan medya uygulamaya
-// düşünce: dosyayı kalıcı klasöre kopyalayıp "pending" bir kayıt oluşturur ve /seal ekranına
-// yönlendirir. Böylece normal kaydın gittiği kanıtlanmış hat (hash → MWA → register_recording
-// → Supabase register + transkript) aynen çalışır; paylaşılan kayıt "My Recordings"te de görünür.
-// Bağlı cüzdan yoksa önce /wallet'a gider; kayıt pending kalır, sonradan mühürlenebilir.
+// Role 6: "Share → Seal with Witness".
+// When media shared from another app (gallery, camera, voice recorder, files) arrives, this copies the
+// file to the persistent folder, creates a "pending" recording and routes to /seal. So the same proven
+// pipeline as a recording (hash → MWA → register_recording → Supabase register + transcript) runs
+// unchanged, and the shared item also shows up in "My Recordings".
+// With no connected wallet it goes to /wallet first; the recording stays pending and can be sealed later.
 //
-// _layout'ta ShareIntentProvider altında, her zaman mount olur (null render eder). Intent'i
-// tüketir tüketmez resetShareIntent ile temizler, böylece /dev'deki eski kart tetiklenmez.
+// Always mounted under ShareIntentProvider in _layout (renders null). It clears the intent with
+// resetShareIntent as soon as it's consumed, so the old card on /dev doesn't fire.
 
-/** expo-share-intent Android'de düz bir dosya yolu verebilir; File URI'ye normalize et. */
+/** On Android expo-share-intent can give a plain file path; normalize it to a file URI. */
 function toFileUri(path: string): string {
   if (path.startsWith('file://') || path.startsWith('content://')) return path
   return `file://${path}`
@@ -23,7 +23,7 @@ function toFileUri(path: string): string {
 export function ShareIntentHandler() {
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext()
   const { account } = useMobileWallet()
-  // Aynı intent'i state güncellenene kadar iki kez işlememek için.
+  // So the same intent isn't handled twice before state updates.
   const busy = useRef(false)
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function ShareIntentHandler() {
       resetShareIntent()
       router.push(account ? { pathname: '/seal', params: { id: item.id } } : { pathname: '/wallet' })
     } catch {
-      // Dosya okunamadı/kopyalanamadı: intent'i temizle, kullanıcı tekrar deneyebilir.
+      // Couldn't read/copy the file: clear the intent so the user can try again.
       resetShareIntent()
     }
   }, [hasShareIntent, shareIntent, account, resetShareIntent])

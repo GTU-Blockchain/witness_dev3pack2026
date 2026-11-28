@@ -2,22 +2,22 @@ import { useSyncExternalStore } from 'react'
 import { Directory, File, Paths } from 'expo-file-system'
 import type { RecordingItem } from '@/src/screens/RecordingsScreen'
 
-// Kayıt listesi: telefonda, uygulamanın kalıcı klasöründe JSON olarak durur.
-// Ses dosyaları da cache'ten (sistem silebilir) kalıcı klasöre taşınır.
-// Taşıma baytları değiştirmez; dosya asla yeniden kodlanmaz / kırpılmaz.
-// Mühürlenmemiş ("pending") kayıtlar otomatik silinmez.
+// The recordings list: stored on the phone as JSON in the app's persistent folder.
+// Audio files are moved from the cache (which the system may clear) to the persistent folder too.
+// Moving doesn't change the bytes; the file is never re-encoded or trimmed.
+// Unsealed ("pending") recordings are never deleted automatically.
 
 export type StoredRecording = RecordingItem & {
-  /** Ses dosyasının yolu (file://...). */
+  /** Path of the media file (file://...). */
   uri: string
-  /** MIME türü (ör. "audio/mp4", "image/jpeg"). Paylaşılan dosyalar için set edilir;
-   *  uygulama içi kayıtlar her zaman m4a olduğundan boş bırakılır (backend-sync fallback eder). */
+  /** MIME type (e.g. "audio/mp4", "image/jpeg"). Set for shared files; left empty for in-app
+   *  recordings, which are always m4a (backend-sync falls back to that). */
   mimeType?: string
   signature?: string
   slot?: number
-  /** Mühürleyen cüzdan (base58); Supabase'e register için. */
+  /** The sealing wallet (base58), for the Supabase register call. */
   wallet?: string
-  /** Supabase `register` başarılı oldu mu (bkz. features/record/backend-sync.ts). */
+  /** Did the Supabase `register` call succeed (see features/record/backend-sync.ts)? */
   backendSynced?: boolean
   transcriptStatus?: 'pending' | 'done' | 'failed' | 'skipped'
   transcriptLang?: 'tr' | 'en' | null
@@ -42,7 +42,7 @@ function save(next: StoredRecording[]) {
   try {
     indexFile.write(JSON.stringify(next))
   } catch {
-    // Kaydedilemezse liste en azından bu oturumda bellekte kalır.
+    // If saving fails, the list at least stays in memory for this session.
   }
   listeners.forEach((l) => l())
 }
@@ -52,7 +52,7 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener)
 }
 
-/** Yeni çekilen kaydı listeye "pending" olarak ekler, dosyasını kalıcı klasöre taşır. */
+/** Adds a new recording to the list as "pending" and moves its file to the persistent folder. */
 export function addRecording(tempUri: string, durationMillis: number, locationEnabled: boolean): StoredRecording {
   if (!dir.exists) dir.create({ intermediates: true, idempotent: true })
   const source = new File(tempUri)
@@ -70,9 +70,9 @@ export function addRecording(tempUri: string, durationMillis: number, locationEn
   return item
 }
 
-/** Rol 6 — başka uygulamadan paylaşılan dosyayı (ses/resim) listeye "pending" ekler.
- *  Dosyayı kalıcı klasöre KOPYALAR (taşımaz; kaynak başka uygulamanın/cache'in olabilir).
- *  Baytlar değişmez; dosya asla yeniden kodlanmaz. Sonrası normal kayıtla aynı: /seal hattı. */
+/** Role 6: adds a file shared from another app (audio/image) to the list as "pending".
+ *  COPIES the file to the persistent folder (doesn't move it; the source may belong to another app or a cache).
+ *  The bytes don't change; the file is never re-encoded. After that it's the same as a recording: the /seal pipeline. */
 export function addSharedRecording(
   sourceUri: string,
   fileName: string,

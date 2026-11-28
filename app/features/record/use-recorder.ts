@@ -13,8 +13,8 @@ import {
 import { File } from 'expo-file-system'
 import type { RecordStatus } from '@/src/screens/RecordScreen'
 
-// Ortak kural (docs/TECHNICAL.md): m4a (AAC), mono, 44.1 kHz.
-// Kaydedilen dosya sonradan asla yeniden kodlanmaz / kırpılmaz; mühürleme bu ham dosyayı hash'ler.
+// Shared rule (docs/TECHNICAL.md): m4a (AAC), mono, 44.1 kHz.
+// The recorded file is never re-encoded or trimmed afterwards; sealing hashes this raw file.
 const RECORDING_OPTIONS: RecordingOptions = {
   extension: '.m4a',
   sampleRate: 44100,
@@ -25,10 +25,10 @@ const RECORDING_OPTIONS: RecordingOptions = {
   web: { mimeType: 'audio/mp4', bitsPerSecond: 128000 },
 }
 
-// Kayıt sırasındaki dalga göstergesi için SÜS amaçlı seviye (0..1). Gerçek sese bağlı değil:
-// birkaç farklı hızda dalga + tik başına değişen "gürültü" ile konuşmaya benzer, sürekli
-// değişen bir desen üretir. Saf fonksiyon (aynı zamana aynı değer), render'da güvenle çağrılır.
-// 0..1 arası sözde rastgele sayı; aynı girdiye hep aynı sonucu verir.
+// DECORATIVE level (0..1) for the meter shown while recording. It is NOT driven by the real audio:
+// a few waves at different speeds plus per-tick "noise" make a constantly changing, speech-like
+// pattern. Pure function (same time → same value), safe to call during render.
+// Pseudo-random number in 0..1; always the same result for the same input.
 function pseudoRandom(n: number): number {
   return Math.abs(Math.sin(n * 12.9898 + 78.233) * 43758.5453) % 1
 }
@@ -37,21 +37,21 @@ function decorativeLevel(millis: number): number {
   const t = millis / 1000
   const tick = Math.floor(millis / 100)
 
-  // Konuşma gibi ~1.2-2 sn'lik "cümleler": her birinin kendi yüksekliği var,
-  // bazıları fısıltı gibi alçak, bazıları bağırır gibi yüksek; arada kısa sessizlikler.
+  // Speech-like "phrases" of ~1.2-2 s, each with its own loudness:
+  // some low like a whisper, some high like shouting, with short pauses in between.
   const phrase = Math.floor(t / 1.5)
   const phraseLoudness = 0.25 + 0.75 * pseudoRandom(phrase)
   const isPause = pseudoRandom(phrase + 1000) < 0.18
 
-  const noise = pseudoRandom(tick) // hece başına titreşim
+  const noise = pseudoRandom(tick) // per-syllable jitter
   if (isPause) return 0.05 + 0.08 * noise
 
-  const syllable = 0.7 + 0.3 * Math.sin(t * 7.3 + phrase) // cümle içindeki hızlı inip kalkma
+  const syllable = 0.7 + 0.3 * Math.sin(t * 7.3 + phrase) // fast rise and fall within a phrase
   const raw = phraseLoudness * syllable * (0.4 + 0.9 * noise)
-  return Math.min(1, Math.max(0.06, Math.pow(raw, 0.7))) // üs < 1: tepeler daha belirgin
+  return Math.min(1, Math.max(0.06, Math.pow(raw, 0.7))) // exponent < 1: peaks stand out more
 }
 
-/** Kayıt ekranının ses mantığı: izin, kaydet / durdur, dinle, sil. */
+/** Audio logic for the record screen: permission, record / stop, play back, delete. */
 export function useRecorder() {
   const recorder = useAudioRecorder(RECORDING_OPTIONS)
   const recorderState = useAudioRecorderState(recorder, 100)
@@ -114,7 +114,7 @@ export function useRecorder() {
       try {
         new File(uri).delete()
       } catch {
-        // Dosya zaten yoksa sorun değil.
+        // Fine if the file is already gone.
       }
     }
     setUri(null)
@@ -122,7 +122,7 @@ export function useRecorder() {
     setStatus('idle')
   }
 
-  /** Kaydı mühürlemeye devreder: dosyayı SİLMEDEN ekranı başa döndürür. */
+  /** Hands the recording off to sealing: resets the screen WITHOUT deleting the file. */
   function handOff(): { uri: string; durationMillis: number } | null {
     if (!uri) return null
     player.pause()

@@ -1,6 +1,6 @@
-// register_recording'i devnet'te deployer keypair'ıyla çağırıp PDA'yı doğrular
-// (Phantom'sız kesin kanıt). Çalıştır: node scripts/register-recording-devnet.mjs
-// Keypair sadece dosyadan OKUNUR (~/.config/solana/id.json); hiçbir sır gömülü değil.
+// Calls register_recording on devnet with the deployer keypair and checks the PDA
+// (a wallet-free check that the program works). Run: node scripts/register-recording-devnet.mjs
+// The keypair is only READ from a file (~/.config/solana/id.json); no secret is embedded.
 import anchorPkg from '@coral-xyz/anchor'
 const { Wallet, AnchorProvider, Program, BN } = anchorPkg
 import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js'
@@ -30,10 +30,10 @@ const sig = await program.methods
 console.log('tx:', sig)
 
 const rec = await program.account.recording.fetch(pda)
-console.log('--- PDA okundu ---')
+console.log('--- PDA read ---')
 console.log('authority:', rec.authority.toString())
-console.log('audio_hash eşleşti:', Buffer.from(rec.audioHash).equals(Buffer.from(audioHash)))
-console.log('recorded_at (beyan):', rec.recordedAt.toString())
-console.log('anchored_at (zincir):', rec.anchoredAt.toString())
+console.log('audio_hash matches:', Buffer.from(rec.audioHash).equals(Buffer.from(audioHash)))
+console.log('recorded_at (claimed):', rec.recordedAt.toString())
+console.log('anchored_at (chain):', rec.anchoredAt.toString())
 console.log('duration_ms:', rec.durationMs)
 console.log('location_commitment:', rec.locationCommitment)

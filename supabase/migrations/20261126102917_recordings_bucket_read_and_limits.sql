@@ -1,14 +1,15 @@
--- Paylaşılan dosyalar için storage kuralları (TECHNICAL → Supabase → Storage).
+-- Storage rules for shared files (TECHNICAL → Supabase → Storage). Encrypted sharing is on the roadmap;
+-- no client uploads files yet.
 --
--- 1) Boyut sınırı: bucket'a 25 MB'tan büyük dosya yüklenemez (upload-url ile verilen linkler de buna tabi).
+-- 1) Size limit: no file larger than 25 MB can be uploaded to the bucket (links from upload-url included).
 update storage.buckets
 set file_size_limit = 26214400
 where id = 'recordings';
 
--- 2) Okuma: doğrulama sayfası (public/anon key) bu bucket'taki dosyalar için imzalı okuma URL'si
---    oluşturabilsin / indirebilsin. Dosyalar telefonda AES-256-GCM ile şifreli; anahtar sadece paylaşım
---    linkinin #k= kısmında, sunucuya hiç gitmiyor. Bu yüzden şifreli dosyayı okumak tek başına bir şey açmaz.
---    Yazma/silme için policy yok: yükleme sadece upload-url'in verdiği tek seferlik linkle yapılır.
+-- 2) Read: the verification page (public/anon key) can create signed read URLs for / download files in
+--    this bucket. By design, files are encrypted on the phone with AES-256-GCM and the key lives only in the
+--    share link's #k= part, never on the server, so reading an encrypted file alone reveals nothing.
+--    No write/delete policy: uploads only go through the one-time link from upload-url.
 drop policy if exists "recordings bucket read" on storage.objects;
 create policy "recordings bucket read"
   on storage.objects for select

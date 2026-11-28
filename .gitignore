@@ -35,7 +35,7 @@ id.json
 supabase/.branches/
 supabase/.temp/
 
-# OS / editör
+# OS / editor
 .DS_Store
 .vscode/
 .idea/

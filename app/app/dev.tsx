@@ -21,7 +21,7 @@ export default function DevScreen() {
           </Text>
         </View>
         <Link href="/wallet" asChild>
-          <Button title="Cüzdan ekranı" />
+          <Button title="Wallet screen" />
         </Link>
         <AccountFeatureIndex />
         <NetworkFeatureIndex />

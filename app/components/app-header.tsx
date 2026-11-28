@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { StyleSheet, Text, View } from 'react-native'
 import { C, MONO } from '@/constants/theme'
 
-// Template'teki ortak üst başlık: kalkan ikonu + "Witness" + (varsa) cüzdan hapı.
+// The template's shared header: shield icon + "Witness" + (if any) the wallet pill.
 export function AppHeader({ walletLabel }: { walletLabel?: string }) {
   return (
     <>

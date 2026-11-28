@@ -1,9 +1,9 @@
-// 3: register_recording testleri. `anchor test --provider.cluster localnet` ile çalışır.
-// Senaryolar:
-//  - geçerli kayıt → PDA açılır, alanlar doğru, anchored_at zincir saatinden
-//  - aynı hash ikinci kez → işlem başarısız (init, PDA zaten var)
+// 3: register_recording tests. Run with `anchor test --provider.cluster localnet`.
+// Scenarios:
+//  - valid record → PDA created, fields correct, anchored_at from chain time
+//  - same hash a second time → transaction fails (init, PDA already exists)
 //  - duration_ms == 0 → InvalidDuration
-//  - location_commitment null ve dolu
+//  - location_commitment null and set
 import * as anchor from "@coral-xyz/anchor"
 import { Program } from "@coral-xyz/anchor"
 import { Witness } from "../target/types/witness"
@@ -18,7 +18,7 @@ describe("witness", () => {
   const program = anchor.workspace.Witness as Program<Witness>
   const authority = provider.wallet
 
-  // Her testte farklı hash kullan ki PDA'lar çakışmasın.
+  // Use a different hash in every test so the PDAs don't collide.
   function freshHash(): number[] {
     return Array.from(createHash("sha256").update(randomBytes(16)).digest())
   }
@@ -31,7 +31,7 @@ describe("witness", () => {
     return pda
   }
 
-  it("geçerli kayıt → PDA açılır, alanlar doğru, anchored_at zincir saatinden", async () => {
+  it("valid record → PDA created, fields correct, anchored_at from chain time", async () => {
     const audioHash = freshHash()
     const recordedAt = new anchor.BN(1_700_000_000)
     const durationMs = 12_345
@@ -50,14 +50,14 @@ describe("witness", () => {
     assert.equal(rec.recordedAt.toNumber(), recordedAt.toNumber())
     assert.equal(rec.durationMs, durationMs)
     assert.isNull(rec.locationCommitment)
-    // anchored_at telefon beyanı değil, zincir saati: ~şimdiki zamanla tutarlı olmalı.
+    // anchored_at is chain time, not the phone's claim: it must be close to now.
     const anchoredAt = rec.anchoredAt.toNumber()
     assert.isAtLeast(anchoredAt, before - 120)
     assert.isAtMost(anchoredAt, after + 120)
     assert.notEqual(anchoredAt, recordedAt.toNumber())
   })
 
-  it("aynı hash ikinci kez → işlem başarısız", async () => {
+  it("same hash a second time → transaction fails", async () => {
     const audioHash = freshHash()
     const pda = recordingPda(audioHash)
     await program.methods
@@ -70,10 +70,10 @@ describe("witness", () => {
         .registerRecording(audioHash, new anchor.BN(1_700_000_111), 2000, null)
         .accounts({ recording: pda, authority: authority.publicKey })
         .rpc()
-      assert.fail("aynı hash ikinci kez yazılabildi — olmamalıydı")
+      assert.fail("the same hash was written twice; it must not be")
     } catch (err) {
-      // init edilmiş PDA'yı tekrar init: System Program "already in use" / Anchor hatası.
-      assert.ok(err, "ikinci yazma hata vermeli")
+      // init on an already-initialized PDA: System Program "already in use" / Anchor error.
+      assert.ok(err, "the second write must fail")
     }
   })
 
@@ -85,16 +85,16 @@ describe("witness", () => {
         .registerRecording(audioHash, new anchor.BN(1_700_000_000), 0, null)
         .accounts({ recording: pda, authority: authority.publicKey })
         .rpc()
-      assert.fail("duration_ms=0 kabul edildi — olmamalıydı")
+      assert.fail("duration_ms=0 was accepted; it must not be")
     } catch (err) {
       const e = err as anchor.AnchorError
       expect(e.error.errorCode.code).to.equal("InvalidDuration")
     }
   })
 
-  it("location_commitment dolu → aynen saklanır", async () => {
+  it("location_commitment set → stored as-is", async () => {
     const audioHash = freshHash()
-    const commitment = Array.from(createHash("sha256").update("konum").digest())
+    const commitment = Array.from(createHash("sha256").update("location").digest())
     const pda = recordingPda(audioHash)
     await program.methods
       .registerRecording(audioHash, new anchor.BN(1_700_000_000), 5000, commitment)

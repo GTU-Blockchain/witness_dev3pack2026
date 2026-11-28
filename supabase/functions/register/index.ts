@@ -1,17 +1,17 @@
-// Edge Function: register  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TECHNICAL.md → "Supabase" → Edge Function'lar
+// Edge Function: register  (owner: Backend + captain)
+// Contract: docs/TECHNICAL.md → "Supabase" → Edge Functions
 //
-// Girdi:  POST { audio_hash, tx_signature, wallet, mime_type? }
-//         mime_type isteğe bağlı (örn. "audio/mp4", "image/jpeg"). Ses/video değilse transcript_status = 'skipped'.
-// Çıktı:  201 { status: "registered", recording }  ya da  200 { status: "already_registered", recording }
+// Input:  POST { audio_hash, tx_signature, wallet, mime_type? }
+//         mime_type is optional (e.g. "audio/mp4", "image/jpeg"). If it isn't audio/video, transcript_status = 'skipped'.
+// Output: 201 { status: "registered", recording }  or  200 { status: "already_registered", recording }
 //
-// Gelen hiçbir değere güvenmez. Satırı yazmadan önce zincirden şunları doğrular:
-//   1. İşlem devnet'te var, onaylı ve başarılı
-//   2. `wallet` işlemi imzalamış
-//   3. İşlem Witness programının register_recording'ini çağırıyor, içindeki hash = audio_hash
-//   4. Çağrıdaki hesaplar: PDA = ["rec", hash] ve authority = wallet
-//   5. PDA zincirde var, programa ait, içindeki authority ve audio_hash eşleşiyor
-// Sonra satırı service role ile yazar (RLS'yi atlar). Aynı kayıt tekrar gelirse mevcut satırı döner.
+// Trusts none of the input. Before writing the row it verifies on chain that:
+//   1. The transaction exists on devnet, is confirmed and succeeded
+//   2. `wallet` signed the transaction
+//   3. The transaction calls the Witness program's register_recording, and its hash = audio_hash
+//   4. The accounts in the call: PDA = ["rec", hash] and authority = wallet
+//   5. The PDA exists on chain, is owned by the program, and its authority and audio_hash match
+// Then it writes the row with the service role (bypasses RLS). If the same record comes in again, it returns the existing row.
 
 import { Connection, PublicKey } from "npm:@solana/web3.js@1.98.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -21,14 +21,14 @@ const PROGRAM_ID = new PublicKey(
 );
 const RPC_URL = Deno.env.get("SOLANA_RPC_URL") ?? "https://api.devnet.solana.com";
 
-// program/target/idl/witness.json'dan
+// From program/target/idl/witness.json
 const REGISTER_IX_DISCRIMINATOR = [134, 1, 57, 133, 241, 98, 215, 15];
 const RECORDING_ACCOUNT_DISCRIMINATOR = [127, 40, 57, 149, 55, 75, 215, 111];
 
 const HEX64 = /^[0-9a-f]{64}$/;
-const MIME = /^[a-z0-9]+\/[a-z0-9][a-z0-9.+-]{0,99}$/; // tablodaki check ile aynı
+const MIME = /^[a-z0-9]+\/[a-z0-9][a-z0-9.+-]{0,99}$/; // same as the table's check constraint
 
-// Transkript sadece sesi olan dosyalarda yapılır (ElevenLabs videodaki sesi de yazıya döker).
+// Only files with sound get a transcript (ElevenLabs also transcribes the audio track of a video).
 function isTranscribable(mime: string | null): boolean {
   return mime === null || mime.startsWith("audio/") || mime.startsWith("video/");
 }
@@ -61,7 +61,7 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Base58 metni bayta çevirir; geçersiz karakter varsa null. Solana imzası tam 64 bayt olmalı.
+// Byte length of a base58 string; null on an invalid character. A Solana signature must be exactly 64 bytes.
 function base58ByteLength(s: string): number | null {
   if (s.length === 0 || s.length > 100) return null;
   let n = 0n;
@@ -92,10 +92,10 @@ type Recording = {
   hasLocation: boolean;
 };
 
-// Recording hesabını Borsh düzenine göre çözer:
+// Decodes a Recording account using its Borsh layout:
 // 8 discriminator | 32 authority | 32 audio_hash | 8 recorded_at | 8 anchored_at | 4 duration_ms
 // | Option<[u8;32]> location_commitment | 1 bump
-// Dikkat: Option boşsa (None) 1 bayt, doluysa (Some) 1 + 32 bayt yer kaplar; sonraki alanların yeri buna göre kayar.
+// Note: an empty Option (None) takes 1 byte, a full one (Some) 1 + 32 bytes; later fields shift accordingly.
 function decodeRecording(data: Uint8Array): Recording | null {
   const minLen = 8 + 32 + 32 + 8 + 8 + 4 + 1 + 1;
   if (data.length < minLen || !startsWith(data, RECORDING_ACCOUNT_DISCRIMINATOR)) return null;
@@ -118,7 +118,7 @@ function decodeRecording(data: Uint8Array): Recording | null {
   return { authority, audioHash, recordedAt, anchoredAt, durationMs, hasLocation: optionTag === 1 };
 }
 
-// Uygulama bizi confirmTransaction'dan hemen sonra çağırır; RPC bazen bir an geç görür, birkaç kez dene.
+// The app calls us right after confirmTransaction; the RPC sometimes sees it a moment late, so retry a few times.
 async function getTransactionWithRetry(conn: Connection, signature: string) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const tx = await conn.getTransaction(signature, {
@@ -133,35 +133,35 @@ async function getTransactionWithRetry(conn: Connection, signature: string) {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return fail(405, "method_not_allowed", "Sadece POST");
+  if (req.method !== "POST") return fail(405, "method_not_allowed", "POST only");
 
-  // --- 0. Girdi biçimi ---
+  // --- 0. Input format ---
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return fail(400, "bad_json", "Gövde JSON olmalı");
+    return fail(400, "bad_json", "Body must be JSON");
   }
   const audioHash = String(body?.audio_hash ?? "").toLowerCase();
   const txSignature = String(body?.tx_signature ?? "");
   const walletInput = String(body?.wallet ?? "");
   const mimeInput = body?.mime_type;
 
-  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash 64 karakter hex olmalı");
+  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash must be 64 hex characters");
   if (base58ByteLength(txSignature) !== 64) {
-    return fail(400, "bad_tx_signature", "tx_signature geçerli bir Solana imzası değil (64 bayt base58)");
+    return fail(400, "bad_tx_signature", "tx_signature is not a valid Solana signature (64 bytes, base58)");
   }
   let wallet: PublicKey;
   try {
     wallet = new PublicKey(walletInput);
   } catch {
-    return fail(400, "bad_wallet", "wallet geçerli bir Solana adresi değil");
+    return fail(400, "bad_wallet", "wallet is not a valid Solana address");
   }
-  // Boş / gönderilmemiş = bilinmiyor (eski davranış). "image/jpeg; charset=..." gibi parametreler atılır.
+  // Empty / not sent = unknown (old behavior). Parameters such as "image/jpeg; charset=..." are dropped.
   let mimeType: string | null = null;
   if (mimeInput !== undefined && mimeInput !== null && mimeInput !== "") {
     mimeType = String(mimeInput).split(";")[0].trim().toLowerCase();
-    if (!MIME.test(mimeType)) return fail(400, "bad_mime_type", "mime_type \"tür/alt-tür\" biçiminde olmalı, örn. image/jpeg");
+    if (!MIME.test(mimeType)) return fail(400, "bad_mime_type", "mime_type must look like \"type/subtype\", e.g. image/jpeg");
   }
   const transcriptStatus = isTranscribable(mimeType) ? "pending" : "skipped";
 
@@ -172,52 +172,52 @@ Deno.serve(async (req: Request) => {
   )[0];
 
   try {
-    // --- 1. İşlem var, onaylı, başarılı ---
+    // --- 1. Transaction exists, is confirmed, succeeded ---
     const tx = await getTransactionWithRetry(conn, txSignature);
-    if (!tx) return fail(404, "tx_not_found", "İşlem devnet'te bulunamadı ya da henüz onaylanmadı");
-    if (tx.meta?.err) return fail(422, "tx_failed", "İşlem zincirde başarısız olmuş");
+    if (!tx) return fail(404, "tx_not_found", "Transaction not found on devnet, or not confirmed yet");
+    if (tx.meta?.err) return fail(422, "tx_failed", "Transaction failed on chain");
 
     const msg = tx.transaction.message;
     const accountKeys = msg.getAccountKeys({
       accountKeysFromLookups: tx.meta?.loadedAddresses ?? undefined,
     });
 
-    // --- 2. wallet işlemi imzalamış ---
+    // --- 2. wallet signed the transaction ---
     const signers = msg.staticAccountKeys.slice(0, msg.header.numRequiredSignatures);
     if (!signers.some((k) => k.equals(wallet))) {
-      return fail(403, "wallet_not_signer", "Bu cüzdan işlemi imzalamamış");
+      return fail(403, "wallet_not_signer", "This wallet did not sign the transaction");
     }
 
-    // --- 3. Witness programının register_recording çağrısı, hash eşleşiyor ---
+    // --- 3. It calls the Witness program's register_recording, and the hash matches ---
     const ix = msg.compiledInstructions.find(
       (i) =>
         accountKeys.get(i.programIdIndex)?.equals(PROGRAM_ID) &&
         startsWith(i.data, REGISTER_IX_DISCRIMINATOR),
     );
-    if (!ix) return fail(422, "not_witness_tx", "İşlem Witness programının register_recording'ini çağırmıyor");
+    if (!ix) return fail(422, "not_witness_tx", "Transaction does not call the Witness program's register_recording");
     if (toHex(ix.data.slice(8, 40)) !== audioHash) {
-      return fail(403, "hash_mismatch", "İşlemdeki hash gönderilen audio_hash ile aynı değil");
+      return fail(403, "hash_mismatch", "The hash in the transaction does not match the audio_hash sent");
     }
 
-    // --- 4. Çağrıdaki hesaplar: [recording PDA, authority, system_program] ---
+    // --- 4. Accounts in the call: [recording PDA, authority, system_program] ---
     const ixPda = accountKeys.get(ix.accountKeyIndexes[0]);
     const ixAuthority = accountKeys.get(ix.accountKeyIndexes[1]);
     if (!ixPda?.equals(pda) || !ixAuthority?.equals(wallet)) {
-      return fail(403, "account_mismatch", "İşlemdeki PDA ya da authority beklenenle uyuşmuyor");
+      return fail(403, "account_mismatch", "The PDA or authority in the transaction does not match");
     }
 
-    // --- 5. PDA zincirde var ve içeriği eşleşiyor ---
+    // --- 5. The PDA exists on chain and its contents match ---
     const info = await conn.getAccountInfo(pda, "confirmed");
     if (!info || !info.owner.equals(PROGRAM_ID)) {
-      return fail(404, "recording_not_found", "Bu hash için zincirde Recording hesabı yok");
+      return fail(404, "recording_not_found", "No Recording account on chain for this hash");
     }
     const rec = decodeRecording(info.data);
-    if (!rec) return fail(422, "bad_recording_account", "Recording hesabı çözülemedi");
+    if (!rec) return fail(422, "bad_recording_account", "Could not decode the Recording account");
     if (rec.audioHash !== audioHash || !rec.authority.equals(wallet)) {
-      return fail(403, "recording_mismatch", "Zincirdeki kayıt bu hash/cüzdanla eşleşmiyor");
+      return fail(403, "recording_mismatch", "The on-chain record does not match this hash/wallet");
     }
 
-    // --- 6. Veritabanına yaz (service role, RLS'yi atlar) ---
+    // --- 6. Write to the database (service role, bypasses RLS) ---
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -232,7 +232,7 @@ Deno.serve(async (req: Request) => {
     if (selectError) return fail(500, "db_error", selectError.message);
     if (existing) {
       if (existing.tx_signature === txSignature && existing.wallet === wallet.toBase58()) {
-        // Önceki çağrı mime_type'sız geldiyse (tekrar deneme), türü şimdi tamamla
+        // If an earlier call (a retry) came without mime_type, fill in the type now
         if (existing.mime_type === null && mimeType !== null) {
           const patch: Record<string, string> = { mime_type: mimeType };
           if (existing.transcript_status === "pending" && transcriptStatus === "skipped") {
@@ -249,7 +249,7 @@ Deno.serve(async (req: Request) => {
         }
         return json(200, { status: "already_registered", recording: existing });
       }
-      return fail(409, "conflict", "Bu hash farklı bir işlem ya da cüzdanla kayıtlı");
+      return fail(409, "conflict", "This hash is registered with a different transaction or wallet");
     }
 
     const { data: inserted, error: insertError } = await supabase
@@ -267,14 +267,14 @@ Deno.serve(async (req: Request) => {
       .select()
       .single();
     if (insertError) {
-      // Aynı anda iki istek geldiyse ikincisi primary key'e çarpar
-      if (insertError.code === "23505") return fail(409, "conflict", "Bu hash az önce kaydedildi, tekrar deneyin");
+      // If two requests arrive at once, the second hits the primary key
+      if (insertError.code === "23505") return fail(409, "conflict", "This hash was just registered, please try again");
       return fail(500, "db_error", insertError.message);
     }
 
     return json(201, { status: "registered", recording: inserted });
   } catch (e) {
     console.error("register error", e);
-    return fail(502, "rpc_error", "Solana RPC'ye ulaşılamadı ya da beklenmedik bir hata oldu");
+    return fail(502, "rpc_error", "Could not reach the Solana RPC, or an unexpected error occurred");
   }
 });

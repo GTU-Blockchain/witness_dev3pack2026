@@ -1,23 +1,23 @@
-// Edge Function: transcribe  (sahibi: 5 Backend + kaptan)
-// Sözleşme: docs/TECHNICAL.md → "Supabase" → Edge Function'lar, "Transkript akışı"
+// Edge Function: transcribe  (owner: Backend + captain)
+// Contract: docs/TECHNICAL.md → "Supabase" → Edge Functions
 //
-// Girdi:  POST multipart/form-data  →  audio_hash (metin) + file (mühürlenen m4a, şifresiz)
-// Çıktı:  200 { status: "done", transcript, transcript_lang }
-//         200 { status: "already_done", ... } (daha önce yapıldıysa ElevenLabs'e tekrar gitmez)
+// Input:  POST multipart/form-data  →  audio_hash (text) + file (the sealed m4a, unencrypted)
+// Output: 200 { status: "done", transcript, transcript_lang }
+//         200 { status: "already_done", ... } (if already done, ElevenLabs is not called again)
 //
-// ElevenLabs kredisini korumak için önce kontrol eder:
-//   1. Kayıt `register` edilmiş (recordings'te satır var)
-//   2. Gönderilen dosyanın SHA-256'sı = audio_hash (rastgele ses gönderilemez)
-//   3. Transkript daha önce yapılmamış
-//   4. Dosya ses ya da video (foto, belge vs. ElevenLabs'e hiç gönderilmez → 415, satır 'skipped')
-// Sonra ElevenLabs Scribe'a gönderir, dil kodunu tabloya uygun hale getirir (tur → tr, eng → en),
-// satırı günceller. Hata olursa transcript_status = 'failed' (uygulama tekrar deneyebilir).
+// To protect ElevenLabs credits it first checks that:
+//   1. The recording was `register`ed (there is a row in recordings)
+//   2. The SHA-256 of the uploaded file = audio_hash (no arbitrary audio can be sent)
+//   3. There is no transcript yet
+//   4. The file is audio or video (photos, documents etc. never go to ElevenLabs → 415, row 'skipped')
+// Then it sends the file to ElevenLabs Scribe, maps the language code to the table's values (tur → tr, eng → en)
+// and updates the row. On error, transcript_status = 'failed' (the app may retry).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ELEVENLABS_URL = "https://api.elevenlabs.io/v1/speech-to-text";
 const ELEVENLABS_MODEL = "scribe_v1";
-const MAX_FILE_BYTES = 25 * 1024 * 1024; // ~25 MB; demo kayıtları çok daha küçük
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // ~25 MB; demo recordings are much smaller
 const ELEVENLABS_TIMEOUT_MS = 60_000;
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -26,8 +26,8 @@ function isAudioOrVideo(mime: string): boolean {
   return mime.startsWith("audio/") || mime.startsWith("video/");
 }
 
-// Uygulamanın gönderdiği türe güvenmeden, dosyanın ilk baytlarından bilinen ses-dışı türleri tanır.
-// (m4a/mp4 de "ftyp" ile başlar; o yüzden ftyp'te marka bakılır: heic/avif = resim.)
+// Detects known non-audio types from the file's first bytes, without trusting the type the app sent.
+// (m4a/mp4 also start with "ftyp", so for ftyp the brand is checked: heic/avif = image.)
 function sniffNonAudio(b: Uint8Array): string | null {
   const ascii = (from: number, to: number) => String.fromCharCode(...b.slice(from, to));
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
@@ -44,7 +44,7 @@ function sniffNonAudio(b: Uint8Array): string | null {
   return null;
 }
 
-// ElevenLabs ISO 639-3 döner ("tur"); tablo sadece 'tr' / 'en' kabul ediyor (check constraint).
+// ElevenLabs returns ISO 639-3 ("tur"); the table only accepts 'tr' / 'en' (check constraint).
 const LANG_MAP: Record<string, string> = { tur: "tr", tr: "tr", eng: "en", en: "en" };
 
 const CORS = {
@@ -71,28 +71,28 @@ async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return fail(405, "method_not_allowed", "Sadece POST");
+  if (req.method !== "POST") return fail(405, "method_not_allowed", "POST only");
 
   const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
-  if (!apiKey) return fail(500, "not_configured", "ELEVENLABS_API_KEY tanımlı değil");
+  if (!apiKey) return fail(500, "not_configured", "ELEVENLABS_API_KEY is not set");
 
-  // --- 0. Girdi ---
+  // --- 0. Input ---
   let form: FormData;
   try {
     form = await req.formData();
   } catch {
-    return fail(400, "bad_form", "Gövde multipart/form-data olmalı (audio_hash + file)");
+    return fail(400, "bad_form", "Body must be multipart/form-data (audio_hash + file)");
   }
   const audioHash = String(form.get("audio_hash") ?? "").toLowerCase();
   const file = form.get("file");
-  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash 64 karakter hex olmalı");
-  if (!(file instanceof File) || file.size === 0) return fail(400, "missing_file", "file alanında ses dosyası yok");
-  if (file.size > MAX_FILE_BYTES) return fail(413, "file_too_large", "Dosya 25 MB'tan büyük");
+  if (!HEX64.test(audioHash)) return fail(400, "bad_audio_hash", "audio_hash must be 64 hex characters");
+  if (!(file instanceof File) || file.size === 0) return fail(400, "missing_file", "No audio file in the file field");
+  if (file.size > MAX_FILE_BYTES) return fail(413, "file_too_large", "File is larger than 25 MB");
 
-  // --- 1. Dosya gerçekten bu kayıt mı? ---
+  // --- 1. Is the file really this recording? ---
   const bytes = await file.arrayBuffer();
   if ((await sha256Hex(bytes)) !== audioHash) {
-    return fail(400, "hash_mismatch", "Dosyanın SHA-256'sı audio_hash ile aynı değil");
+    return fail(400, "hash_mismatch", "The file's SHA-256 does not match audio_hash");
   }
 
   const supabase = createClient(
@@ -101,14 +101,14 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // --- 2. Kayıt register edilmiş mi, transkript zaten var mı? ---
+  // --- 2. Is the recording registered, and is there a transcript already? ---
   const { data: row, error: selectError } = await supabase
     .from("recordings")
     .select("audio_hash, transcript, transcript_lang, transcript_status, mime_type")
     .eq("audio_hash", audioHash)
     .maybeSingle();
   if (selectError) return fail(500, "db_error", selectError.message);
-  if (!row) return fail(404, "not_registered", "Bu hash register edilmemiş; önce register çağrılmalı");
+  if (!row) return fail(404, "not_registered", "This hash is not registered; call register first");
   if (row.transcript_status === "done") {
     return json(200, {
       status: "already_done",
@@ -117,7 +117,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // --- 2b. Ses/video mu? Önce kayıttaki tür, yoksa gönderilen dosyanın türü, en son ilk baytlar ---
+  // --- 2b. Audio/video? First the stored type, else the uploaded file's type, last the first bytes ---
   const declared = row.mime_type ?? (file.type ? file.type.split(";")[0].trim().toLowerCase() : "");
   const declaredNonAudio = declared !== "" && declared !== "application/octet-stream" && !isAudioOrVideo(declared);
   const sniffed = sniffNonAudio(new Uint8Array(bytes, 0, Math.min(16, bytes.byteLength)));
@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
     if (row.transcript_status !== "skipped") {
       await supabase.from("recordings").update({ transcript_status: "skipped" }).eq("audio_hash", audioHash);
     }
-    return fail(415, "unsupported_type", `Transkript sadece ses/video için yapılır (dosya: ${sniffed ?? (declared || "bilinmiyor")})`);
+    return fail(415, "unsupported_type", `Transcripts are only made for audio/video (file: ${sniffed ?? (declared || "unknown")})`);
   }
 
   const markFailed = () =>
@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
   // --- 3. ElevenLabs Scribe ---
   const upstream = new FormData();
   upstream.append("model_id", ELEVENLABS_MODEL);
-  // Gürültüyü "[konuşma sesi]" gibi etiketlerle yazıya dökmesin; sessiz/gürültülü kayıtta metin boş kalır.
+  // Don't transcribe noise as tags like "[speech sounds]"; a silent/noisy recording gets an empty text.
   upstream.append("tag_audio_events", "false");
   upstream.append("file", new Blob([bytes], { type: file.type || "audio/mp4" }), file.name || "recording.m4a");
 
@@ -149,23 +149,23 @@ Deno.serve(async (req: Request) => {
     if (!res.ok) {
       console.error("elevenlabs error", res.status, (await res.text()).slice(0, 300));
       await markFailed();
-      return fail(502, "transcription_failed", `ElevenLabs hata döndü (HTTP ${res.status})`);
+      return fail(502, "transcription_failed", `ElevenLabs returned an error (HTTP ${res.status})`);
     }
     result = await res.json();
   } catch (e) {
     console.error("elevenlabs request failed", e);
     await markFailed();
-    return fail(502, "transcription_failed", "ElevenLabs'e ulaşılamadı ya da zaman aşımı");
+    return fail(502, "transcription_failed", "Could not reach ElevenLabs, or it timed out");
   }
 
   const detectedLang = (result.language_code ?? "").toLowerCase();
   const transcriptLang = LANG_MAP[detectedLang] ?? null;
-  // Witness sadece Türkçe/İngilizce destekler. Başka dil algılandıysa bu neredeyse hep gürültünün yanlış
-  // okunmasıdır (sessiz emülatör kaydı Hintçe "[belirsiz ses]" dönüyordu); anlamsız metin göstermek yerine boş bırak.
+  // Witness supports only Turkish and English. Any other detected language is almost always misread noise
+  // (a silent emulator recording came back as Hindi "[unclear sound]"); leave it empty rather than show nonsense.
   const transcript = transcriptLang ? (result.text ?? "").trim() : "";
   if (!transcriptLang) console.warn("unsupported transcript language, dropped", detectedLang || "(none)");
 
-  // --- 4. Sonucu yaz ---
+  // --- 4. Write the result ---
   const { error: updateError } = await supabase
     .from("recordings")
     .update({ transcript, transcript_lang: transcriptLang, transcript_status: "done" })

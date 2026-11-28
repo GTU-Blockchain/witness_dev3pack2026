@@ -15,7 +15,7 @@ export default function RecordingsRoute() {
     <RecordingsScreen
       recordings={recordings}
       walletLabel={shortAddress(String(account.address))}
-      // Bekleyen (pending) bir kaydı tekrar mühürlemeyi dene.
+      // Try sealing a pending recording again.
       onSeal={(id) => router.push({ pathname: '/seal', params: { id } })}
       onOpenRecord={() => router.replace('/record')}
     />

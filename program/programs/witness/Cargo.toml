@@ -1,10 +1,10 @@
 [package]
 name = "witness"
 version = "0.1.0"
-description = "Witness: ses kaydı hash'ini zincire bir kez yazan program"
+description = "Witness: writes a file's hash to the chain exactly once"
 edition = "2021"
-# Solana platform-tools v1.48 derleyicisi (rustc 1.84). Cargo'nun MSRV-farkında
-# çözücüsü, edition2024 (rustc 1.85+) isteyen bağımlılıkları otomatik eler.
+# Solana platform-tools v1.48 compiler (rustc 1.84). Cargo's MSRV-aware resolver
+# automatically skips dependencies that need edition2024 (rustc 1.85+).
 rust-version = "1.84"
 
 [lib]

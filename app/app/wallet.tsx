@@ -11,7 +11,7 @@ export default function WalletRoute() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       <WalletScreen />
-      {/* Ekip içi test sayfası; sadece geliştirme sürümünde görünür */}
+      {/* Internal team test page; only visible in development builds */}
       {__DEV__ ? (
         <Link href="/dev" style={styles.devLink}>
           dev

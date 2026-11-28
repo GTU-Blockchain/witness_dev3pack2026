@@ -1,6 +1,6 @@
-// 2+3: Witness programı istemci yardımcıları — register_recording instruction'ını
-// IDL'dan encode eder, PDA'yı türetir, Recording hesabını okur.
-// Program ID + IDL: program devnet'e deploy edildi (docs → deploy).
+// 2+3: Witness program client helpers: encodes the register_recording instruction from the IDL,
+// derives the PDA, reads the Recording account.
+// Program ID + IDL: the program is deployed to devnet (docs → deploy).
 import * as anchor from '@coral-xyz/anchor'
 import { Connection, PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js'
 import { Buffer } from 'buffer'
@@ -11,20 +11,20 @@ export const WITNESS_PROGRAM_ID = new PublicKey(idl.address)
 export const RECORDING_SEED = Buffer.from('rec')
 
 export interface RegisterRecordingArgs {
-  audioHash: Uint8Array // 32 bayt (dosyanın SHA-256'sı)
-  recordedAt: number // telefon saati, unix saniye (beyan)
+  audioHash: Uint8Array // 32 bytes (the file's SHA-256)
+  recordedAt: number // phone clock, unix seconds (the signer's claim)
   durationMs: number
-  locationCommitment?: Uint8Array | null // sha256(lat|lon|salt), opsiyonel
+  locationCommitment?: Uint8Array | null // sha256(lat|lon|salt), optional
 }
 
-/** ["rec", audio_hash] seed'inden Recording PDA'sı. */
+/** The Recording PDA from the ["rec", audio_hash] seeds. */
 export function recordingPda(audioHash: Uint8Array): PublicKey {
   const [pda] = PublicKey.findProgramAddressSync([RECORDING_SEED, Buffer.from(audioHash)], WITNESS_PROGRAM_ID)
   return pda
 }
 
-// İmzasız (read-only) Program: instruction kurmak ve hesap okumak için yeterli;
-// imzalama MWA ile ayrı yapılır.
+// Read-only Program (no signer): enough to build instructions and read accounts;
+// signing happens separately through MWA.
 function readonlyProgram(connection: Connection, authority: PublicKey): anchor.Program<Witness> {
   const wallet = {
     publicKey: authority,
@@ -35,7 +35,7 @@ function readonlyProgram(connection: Connection, authority: PublicKey): anchor.P
   return new anchor.Program(idl as Witness, provider)
 }
 
-/** register_recording instruction'ını kurar; PDA'yı da döner. İmzalama çağırana ait. */
+/** Builds the register_recording instruction and returns the PDA too. Signing is up to the caller. */
 export async function buildRegisterRecordingIx(
   connection: Connection,
   authority: PublicKey,
@@ -53,9 +53,8 @@ export async function buildRegisterRecordingIx(
     .accountsPartial({ recording: pda, authority, systemProgram: SystemProgram.programId })
     .instruction()
 
-  // Anchor'ın ürettiği instruction'ı uygulamanın @solana/web3.js tipleriyle yeniden
-  // inşa et (temiz PublicKey + Buffer). Böylece compileToLegacyMessage Hermes'te
-  // tutarlı çalışır.
+  // Rebuild Anchor's instruction with the app's own @solana/web3.js types (clean PublicKey +
+  // Buffer), so compileToLegacyMessage behaves consistently on Hermes.
   const ix = new TransactionInstruction({
     programId: new PublicKey(rawIx.programId.toBytes()),
     keys: rawIx.keys.map((k) => ({
@@ -78,9 +77,9 @@ export interface RecordingAccount {
   bump: number
 }
 
-/** Recording PDA'sını okur ve çözer; hesap yoksa null.
- *  program.account.* namespace'i yerine doğrudan coder kullanıyoruz (RN/Hermes'te
- *  namespace erişimi tutarsız olabiliyor). */
+/** Reads and decodes the Recording PDA; null if the account doesn't exist.
+ *  Uses the coder directly instead of the program.account.* namespace (namespace access
+ *  can be inconsistent on RN/Hermes). */
 export async function fetchRecording(
   connection: Connection,
   pda: PublicKey,

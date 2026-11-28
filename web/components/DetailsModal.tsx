@@ -1,5 +1,5 @@
 'use client'
-// 4: Doğrulama detayları pop-up'ı. Ana ekran sade kalsın diye tüm teknik alanlar burada.
+// 4: Verification details pop-up. All technical fields live here so the main screen stays simple.
 import { useEffect } from 'react'
 import type { LookupResult } from '@/lib/recording'
 import { explorerAddress, explorerTx, formatDuration, formatIstanbul, shortAddress, shouldShowDuration } from '@/lib/format'
@@ -22,7 +22,7 @@ export function DetailsModal({
   onClose,
 }: {
   fileName: string
-  fileType: string // tarayıcının bildirdiği MIME türü; bilinmiyorsa ''
+  fileType: string // MIME type reported by the browser; '' if unknown
   hash: string
   result: LookupResult
   sig: string | null
