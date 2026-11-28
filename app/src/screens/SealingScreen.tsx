@@ -3,7 +3,7 @@ import Clipboard from '@react-native-clipboard/clipboard'
 import { type ComponentProps, type ReactNode, useEffect, useState } from 'react'
 import { ActivityIndicator, Animated, Easing, Linking, Pressable, Share, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AppHeader, C, HashText, MONO, TabBar, formatDuration } from '@/src/components/witness-ui'
+import { AppHeader, C, HashText, MONO, TabBar, formatDurationOrDash } from '@/src/components/witness-ui'
 
 // UI only. The register_recording flow (hash, wallet approval, tx) drives this screen through props.
 // If writing to chain fails the recording is never deleted — it stays "Pending" and can be retried.
@@ -347,7 +347,7 @@ function SealedView({
         </View>
         <View style={styles.cardRow}>
           <Text style={styles.eyebrow}>DURATION</Text>
-          <Text style={styles.valueMono}>{formatDuration(durationMillis)}</Text>
+          <Text style={styles.valueMono}>{formatDurationOrDash(durationMillis)}</Text>
         </View>
         <Text style={[styles.eyebrow, styles.spaced]}>SHA-256 EVIDENCE DIGEST</Text>
         {hash ? <HashText hash={hash} style={styles.hashSmall} /> : null}

@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useState } from 'react'
 import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AppHeader, C, HashText, MONO, TabBar, formatDuration } from '@/src/components/witness-ui'
+import { AppHeader, C, HashText, MONO, TabBar, formatDurationOrDash } from '@/src/components/witness-ui'
 
 // UI only. The recording store (local files + on-chain status) feeds this list through props.
 
@@ -109,7 +109,7 @@ function RecordingCard({
         <View style={styles.flex}>
           <Text style={styles.cardTitle}>{formatDate(item.recordedAt)}</Text>
           <Text style={styles.cardSub}>
-            {formatDuration(item.durationMillis)}
+            {formatDurationOrDash(item.durationMillis)}
             {item.hash ? ` • ${item.hash.slice(0, 8)}` : ''}
           </Text>
         </View>

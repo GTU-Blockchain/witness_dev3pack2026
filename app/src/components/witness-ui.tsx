@@ -17,6 +17,11 @@ export function formatDuration(durationMillis: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`
 }
 
+/** Picked or shared files have no duration (stored as 0): show a dash instead of 00:00.0. */
+export function formatDurationOrDash(durationMillis: number): string {
+  return durationMillis > 0 ? formatDuration(durationMillis) : '—'
+}
+
 export type TabKey = 'record' | 'recordings'
 
 export function TabBar({
